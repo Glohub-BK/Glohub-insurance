@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: insurance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: insurance
+      POSTGRES_PASSWORD: insurance
+      POSTGRES_DB: insurance
+      TZ: Asia/Seoul
+    ports:
+      - "5433:5432"
+    volumes:
+      - insurance-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U insurance -d insurance"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  insurance-pgdata:
