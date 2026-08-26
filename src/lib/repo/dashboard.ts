@@ -170,6 +170,7 @@ export async function getCoverageCandidates(householdId: string) {
     memberName: string;
     insurerName: string;
     productName: string;
+    contractKind: string;
     category: CoverageCategory;
     name: string;
     amount: string | null;
@@ -179,6 +180,7 @@ export async function getCoverageCandidates(householdId: string) {
             m.display_name  as "memberName",
             p.insurer_name  as "insurerName",
             p.product_name  as "productName",
+            p.contract_kind as "contractKind",
             c.category      as "category",
             c.name          as "name",
             c.amount        as "amount",

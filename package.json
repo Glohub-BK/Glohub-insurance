@@ -20,7 +20,9 @@
     "codef:ping": "tsx scripts/codef-ping.ts",
     "db:purge-sandbox": "tsx scripts/purge-sandbox.ts",
     "db:last-sync": "tsx scripts/last-sync.ts",
-    "db:compare-runs": "tsx scripts/compare-runs.ts"
+    "db:compare-runs": "tsx scripts/compare-runs.ts",
+    "db:repair-amounts": "tsx scripts/repair-amounts.ts",
+    "db:backfill-keys": "tsx scripts/backfill-product-key.ts"
   },
   "dependencies": {
     "next": "16.3.2",

@@ -221,6 +221,7 @@ export default async function ProfilePage() {
         <Row title="보장 분석" href="/coverage" sub="겹치는 담보 · 빈 담보" />
         <Row title="담보 여력" badge={SOON} sub="한도에서 얼마나 남았는지" />
         <Row title="보험금 받은 내역" badge={SOON} sub="언제 · 어디서 · 얼마" />
+        <Row title="약관 보관함" href="/terms" sub="원본 내려받기 · 조항 읽어오기" />
         <Row title="청구 기한 알림" href="/ai" sub="보험금 청구권 소멸시효 3년" />
       </Card>
 

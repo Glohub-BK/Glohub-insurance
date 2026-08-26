@@ -68,16 +68,90 @@ export function isWholeLife(value: string | undefined | null): boolean {
   return typeof value === 'string' && value.includes('종신');
 }
 
-/** "756,000원" → 756000. 마스킹(*)이 섞이면 신뢰할 수 없으므로 null. */
+/**
+ * 금액 문자열 → 원 단위 숫자.
+ *
+ * ⚠ 이전 구현은 숫자가 아닌 문자를 전부 지우고 남은 자릿수를 통째로 Number() 했다.
+ * 그래서 "1일당 30,000원 (최대 180일)" 이 13000180 이 되고, 여러 금액이 한 칸에 담긴
+ * 담보에서는 수십조가 나왔다. 실제로 화면에 10019.2억원이 찍혔다.
+ * 지금은 **숫자 덩어리가 하나일 때만** 값으로 받아들이고, 애매하면 null(미상)로 둔다.
+ * 모르는 걸 모른다고 하는 편이, 그럴듯한 큰 수를 지어내는 것보다 낫다.
+ */
 export function parseAmount(value: string | undefined | null): number | null {
   if (value == null) return null;
   const text = String(value).trim();
   if (text.length === 0) return null;
+  // 마스킹(*)이 섞이면 자릿수를 신뢰할 수 없다.
   if (text.includes('*')) return null;
-  const cleaned = text.replace(/[^0-9.-]/g, '');
-  if (cleaned.length === 0) return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
+  // 9가 열 자리 넘게 늘어선 값은 금액이 아니라 자리표시자다.
+  // 실제 데이터에서 배상책임 담보 몇 건이 999,999,999,999 로 들어왔고,
+  // 그 한 건이 합계에 얹혀 화면에 10019.2억원이 찍혔다.
+  if (isPlaceholder(text)) return null;
+
+  // 1) 한글 단위 표기를 먼저 편다. "3,000만원" → 30000000
+  const scaled = parseKoreanUnits(text);
+  if (scaled !== null) return scaled;
+
+  // 2) 순수 숫자. 세기 전에 금액이 아닌 수식어("1일당", "최대 180일", "2종")를 걷어낸다.
+  const groups = text.replace(QUALIFIER, ' ').match(/\d[\d,]*(?:\.\d+)?/g);
+  if (!groups || groups.length !== 1) return null;
+  const n = Number(groups[0].replace(/,/g, ''));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+// 긴 단위가 먼저 와야 "5천만" 이 "5천"+"만" 으로 쪼개지지 않는다.
+/**
+ * 자리표시자 판별. 대상기관이 "한도 없음 / 실손 보상 / 미고지" 를 9로 채워 보내는 경우가 있다.
+ * 9,999억짜리 개인 배상책임 담보는 존재하지 않으므로 금액으로 받아들이지 않는다.
+ */
+export function isPlaceholder(text: string): boolean {
+  const digits = text.replace(/[^0-9]/g, '');
+  return digits.length >= 10 && /^9+$/.test(digits);
+}
+
+const UNIT_SCALE: Record<string, number> = {
+  억: 100_000_000,
+  천만: 10_000_000,
+  백만: 1_000_000,
+  십만: 100_000,
+  만: 10_000,
+  천: 1_000,
+};
+const UNIT_PATTERN = /(\d[\d,]*(?:\.\d+)?)\s*(억|천만|백만|십만|만|천)/g;
+
+/**
+ * 금액이 아닌 수식어. "1일당 30,000원 (최대 180일)" 의 1 과 180 이 여기 걸린다.
+ * 이걸 먼저 지워야 "숫자가 하나뿐인가" 를 제대로 셀 수 있다.
+ */
+const QUALIFIER = /\d[\d,]*\s*(?:일당|회당|인당|사고당|개월|일|회|년|세|명|건|종|급|주)/g;
+
+/**
+ * "1억5,000만원", "3천만원" 처럼 한글 단위가 붙은 표기를 원 단위로 편다.
+ * 단위가 하나도 없으면 null 을 돌려 호출부가 순수 숫자 경로로 넘어가게 한다.
+ */
+export function parseKoreanUnits(text: string): number | null {
+  const matches = [...text.matchAll(UNIT_PATTERN)];
+  if (matches.length === 0) return null;
+
+  // 단위는 반드시 억 → 만 → 천 순으로 내려가야 한다. 뒤집히면 두 개의 다른 금액이
+  // 한 칸에 담긴 것이므로(예: "만기 3천 / 1억") 해석하지 않는다.
+  let total = 0;
+  let prev = Infinity;
+  for (const [, digits, unit] of matches) {
+    const scale = UNIT_SCALE[unit];
+    if (scale >= prev) return null;
+    prev = scale;
+    const n = Number(digits.replace(/,/g, ''));
+    if (!Number.isFinite(n)) return null;
+    total += n * scale;
+  }
+
+  // 단위 뒤에 남은 자투리 원 단위("1만 5000원")까지 더한다.
+  const tail = text.slice((matches.at(-1)?.index ?? 0) + matches.at(-1)![0].length);
+  const rest = tail.match(/^\s*(\d[\d,]*)\s*원?\s*$/);
+  if (rest) total += Number(rest[1].replace(/,/g, ''));
+
+  return total > 0 ? total : null;
 }
 
 /**

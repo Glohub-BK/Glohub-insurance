@@ -1,4 +1,5 @@
 import { withTransaction } from '../db';
+import { productKeyOf } from '../domain/product-key';
 import type { NormalizedPolicy } from '../codef/normalize';
 import type { CodefEnvironment } from '../codef/types';
 
@@ -41,12 +42,12 @@ export async function saveSyncResult(input: SaveSyncInput): Promise<SaveSyncOutp
       const [row] = await q<{ id: string; was_insert: boolean }>(
         `insert into policy (
            member_id, first_seen_run_id, last_seen_run_id, source, identity_key, contract_kind,
-           insurer_code, insurer_name, product_name, policy_no, policy_no_hidden,
+           insurer_code, insurer_name, product_name, product_key, policy_no, policy_no_hidden,
            policyholder_name, insured_name, status, start_date, end_date,
            premium, payment_cycle, raw
          ) values (
            $1, $2, $2, 'codef', $3, $4,
-           $5, $6, $7, $8, $9,
+           $5, $6, $7, $18, $8, $9,
            $10, $11, $12, $13, $14,
            $15, $16, $17
          )
@@ -55,6 +56,7 @@ export async function saveSyncResult(input: SaveSyncInput): Promise<SaveSyncOutp
            insurer_code     = coalesce(excluded.insurer_code, policy.insurer_code),
            insurer_name     = excluded.insurer_name,
            product_name     = excluded.product_name,
+           product_key      = excluded.product_key,
            policy_no        = coalesce(excluded.policy_no, policy.policy_no),
            policy_no_hidden = coalesce(excluded.policy_no_hidden, policy.policy_no_hidden),
            policyholder_name= coalesce(excluded.policyholder_name, policy.policyholder_name),
@@ -84,6 +86,7 @@ export async function saveSyncResult(input: SaveSyncInput): Promise<SaveSyncOutp
           p.premium,
           p.paymentCycle,
           JSON.stringify(p.raw),
+          productKeyOf(p.insurerName, p.productName),
         ],
       );
 

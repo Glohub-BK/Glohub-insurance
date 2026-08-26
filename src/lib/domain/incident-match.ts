@@ -1,4 +1,5 @@
 import type { CoverageCategory } from './coverage-category';
+import { amountBasisOf, displayAmount, type AmountBasis } from './coverage-basis';
 
 /**
  * 사고 서술 → 적용 가능한 담보 찾기.
@@ -17,6 +18,25 @@ export type IncidentRule = {
   keywords: string[];
   /** 이 사고에 해당하는 담보 카테고리. 앞에 올수록 우선. */
   categories: CoverageCategory[];
+  /**
+   * 담보 **이름**이 이 패턴에 맞아야 「직접 해당」으로 올린다.
+   *
+   * 카테고리만으로 거르면 너무 넓다. 감기로 통원했는데 골절진단비·암진단비까지
+   * 31건이 줄줄이 나오던 게 그 때문이었다. 이름까지 봐야 이 사고와 정말 상관있는
+   * 담보만 앞에 세울 수 있다.
+   */
+  direct: RegExp;
+  /** 이름이 여기 걸리면 이 사고와 무관하므로 목록에서 아예 뺀다. */
+  exclude?: RegExp;
+  /**
+   * 이 **계약 종류**의 담보는 이 사고에 쓰지 않는다.
+   *
+   * 담보 이름만으로는 못 거른다. 자동차보험의 「대물배상」은 이름에 '자동차'가 없어서
+   * 일상생활배상책임과 구분되지 않는다. 실제로 「아이가 안경을 깨뜨렸어요」에
+   * KB 자동차보험 대물배상 10억이 떴다 — 정작 우리 면책 안내에는 "자동차 사고는
+   * 면책"이라고 적혀 있는데도.
+   */
+  excludeKinds?: string[];
   headline: string;
   lead: string;
   note: string;
@@ -33,6 +53,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '타인 물건 파손',
     keywords: ['안경', '파손', '깨', '망가', '부쉈', '부수', '물건', '자전거', '휴대폰', '핸드폰', '유리', '긁어'],
     categories: ['liability'],
+    direct: /배상책임|일상생활|가족일상|자녀배상|파손/,
+    exclude: /자동차|차량|운전|자차|대인|대물/,
+    excludeKinds: ['car', 'savings'],
     headline: '청구 가능성 높음',
     lead: '남의 물건을 망가뜨린 사고는 배상책임 담보로 처리합니다.',
     note: '자녀 본인 계약이 없어도, 부모 계약의 이 특약은 주민등록상 동거 가족을 함께 보장하는 것이 일반적입니다. 자녀 이름으로 담보가 없다고 포기하지 마세요.',
@@ -53,6 +76,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '넘어져서 다침 · 골절',
     keywords: ['골절', '넘어', '다쳤', '부러', '깁스', '타박', '상해', '계단', '삐', '인대'],
     categories: ['actual_loss', 'diagnosis', 'surgery', 'hospital', 'disability'],
+    direct: /상해|재해|골절|깁스|외상|사고|후유장해|깊은상처/,
+    excludeKinds: ['car', 'savings'],
+    exclude: /질병|암|뇌|심근|심장|간|신장|폐|치매|간병|치아|치과|임신|출산|화상|사망|납입면제|운전자|벌금|변호사|배상책임|화재|가재/,
     headline: '두 갈래로 청구하세요',
     lead: '넘어져 다친 사고는 실손의료비와 상해 정액담보를 동시에 청구할 수 있습니다.',
     note: '실손은 실제 낸 돈을 돌려받고, 골절진단비 같은 정액담보는 진단만으로 정액이 나옵니다. 둘은 별개라 중복 청구가 됩니다. 이걸 몰라 정액담보를 놓치는 경우가 가장 많습니다.',
@@ -72,6 +98,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '병원 통원·진료',
     keywords: ['감기', '병원', '통원', '진료', '외래', '약값', '처방', '진료비', '의원', '치료'],
     categories: ['actual_loss', 'hospital'],
+    direct: /통원|외래|처방|조제|의료비|실손|실비/,
+    excludeKinds: ['car', 'savings'],
+    exclude: /입원|수술|진단|사망|장해|간병|일당|암|뇌|심근|치아|치과|화상|골절|배상책임|운전자|화재/,
     headline: '실손으로 청구하세요',
     lead: '통원 진료비는 실손의료비 담보 대상입니다. 다만 자기부담금을 넘겨야 실익이 있습니다.',
     note: '진료비가 3만원이면 자기부담금을 뺀 1~2만원 수준이 남습니다. 금액이 작아도 실손24로는 서류 없이 1분이면 접수됩니다.',
@@ -86,6 +115,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '자동차 사고',
     keywords: ['주차', '접촉', '자동차', '범퍼', '차량', '운전', '추돌', '견인', '차를'],
     categories: ['driver'],
+    direct: /자동차|대물|대인|자기차량|자차|운전자|교통|벌금|변호사|형사합의|견인/,
+    excludeKinds: ['savings'],
+    exclude: /일상생활|가족일상/,
     headline: '자동차보험으로 처리하세요',
     lead: '차량 사고는 대물배상과 자기차량손해로 나뉩니다. 일상생활배상책임으로는 처리되지 않습니다.',
     note: '수리비가 자기부담금과 보험료 할증분을 합친 금액보다 작다면 자비 처리가 유리합니다. 견적을 먼저 받아보세요.',
@@ -100,6 +132,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '누수 피해',
     keywords: ['누수', '젖', '곰팡이', '윗집', '아랫집', '벽지', '물이샜', '배관'],
     categories: ['liability', 'fire'],
+    direct: /배상책임|일상생활|급배수|누출|누수|주택|화재|가재|재물/,
+    excludeKinds: ['car', 'savings'],
+    exclude: /자동차|차량|운전|대인/,
     headline: '가해자 보험을 먼저 확인하세요',
     lead: '윗집 누수 피해는 윗집의 일상생활배상책임에서 나옵니다. 우리 계약이 아니라 상대 계약이 먼저입니다.',
     note: '우리 계약에 화재·재물 담보가 있어도 누수는 화재담보 대상이 아닙니다. 다만 급배수시설 누출 손해 특약이 붙어 있으면 우리 보험으로도 가능합니다.',
@@ -114,6 +149,9 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '중대질병 진단',
     keywords: ['암', '뇌졸중', '뇌출혈', '심근경색', '진단받', '악성', '종양'],
     categories: ['diagnosis', 'surgery', 'hospital', 'actual_loss'],
+    direct: /암|뇌|심근|심장|진단|악성|종양|항암|방사선|표적|유사암|상피내/,
+    excludeKinds: ['car', 'savings'],
+    exclude: /상해|재해|골절|치아|치과|운전자|벌금|변호사|배상책임|화재|가재|자동차|임신|출산/,
     headline: '진단만으로 나오는 담보가 있습니다',
     lead: '중대질병은 진단 확정만으로 정액이 지급되는 담보가 있습니다. 치료비 청구와 별개입니다.',
     note: '진단비는 치료를 받기 전에도 청구할 수 있습니다. 진단 확정일이 기준이므로 조직검사 결과지를 받는 즉시 접수하세요.',
@@ -131,20 +169,36 @@ export type CoverageCandidate = {
   memberName: string;
   insurerName: string;
   productName: string;
+  /** 계약 종류. 'car' 면 자동차보험이다 — 담보 이름만으로는 알 수 없다. */
+  contractKind?: string;
   category: CoverageCategory;
   name: string;
   amount: number | null;
   coverageStatus: string;
 };
 
-export type MatchedCoverage = CoverageCandidate & { rank: number };
+export type MatchedCoverage = CoverageCandidate & {
+  rank: number;
+  /** 지급 방식. 실손·정액·일당은 단위가 달라 서로 더할 수 없다. */
+  basis: AmountBasis;
+  /**
+   * 화면에 실제로 쓸 금액.
+   * 저장된 값이 말이 안 되면(옛 파서가 자릿수를 이어붙인 수십조) null 이 된다.
+   */
+  shownAmount: number | null;
+};
 
 export type MatchResult =
   | {
       kind: 'matched';
       rule: IncidentRule;
-      /** 카테고리 우선순위 → 가입금액 순 */
+      /** 이 사고에 **직접** 해당하는 담보. 카테고리 우선순위 → 가입금액 순. */
       coverages: MatchedCoverage[];
+      /**
+       * 카테고리는 맞지만 담보 이름이 이 사고와 직접 이어지지 않는 것들.
+       * 지우지는 않는다 — 판단은 사람이 한다. 다만 접어서 뒤에 둔다.
+       */
+      related: MatchedCoverage[];
       /** 규칙은 맞았지만 보유 담보가 없을 때 true */
       noCoverage: boolean;
       score: number;
@@ -185,16 +239,134 @@ export function matchIncident(text: string, candidates: CoverageCandidate[]): Ma
   const { rule } = picked;
   const order = new Map(rule.categories.map((c, i) => [c, i]));
 
-  const coverages = candidates
+  const inScope = candidates
     .filter((c) => order.has(c.category))
     .filter((c) => !ACTIVE_STATUSES_EXCLUDED.includes(c.coverageStatus))
-    .map((c) => ({ ...c, rank: order.get(c.category) ?? 99 }))
-    .sort((a, b) => {
-      if (a.rank !== b.rank) return a.rank - b.rank;
-      return (b.amount ?? 0) - (a.amount ?? 0);
-    });
+    // 이름이 이 사고와 명백히 무관하면 목록에 올리지 않는다.
+    // 감기로 통원했는데 암진단비까지 나열되던 게 여기서 걸러진다.
+    .filter((c) => !(rule.exclude && rule.exclude.test(squash(c.name))))
+    // 계약 종류로도 거른다. 자동차보험 담보를 일상 사고에 붙이면 안 된다.
+    .filter((c) => !(rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind)));
 
-  return { kind: 'matched', rule, coverages, noCoverage: coverages.length === 0, score: picked.score };
+  const decorated = dedupe(inScope).map((c) => {
+    const basis = amountBasisOf(c.name, c.category);
+    return {
+      ...c,
+      rank: order.get(c.category) ?? 99,
+      basis,
+      shownAmount: displayAmount(c.amount, basis),
+    };
+  });
+
+  const byRankThenAmount = (a: MatchedCoverage, b: MatchedCoverage) => {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    return (b.shownAmount ?? 0) - (a.shownAmount ?? 0);
+  };
+
+  // 원인(다쳐서/아파서)과 반대편 담보는 직접 해당으로 올리지 않는다.
+  const cause = causeOf(text);
+  const isDirect = (c: MatchedCoverage) =>
+    rule.direct.test(squash(c.name)) && !contradictsCause(c.name, cause);
+
+  const coverages = decorated.filter(isDirect).sort(byRankThenAmount);
+  const related = decorated.filter((c) => !isDirect(c)).sort(byRankThenAmount);
+
+  return {
+    kind: 'matched',
+    rule,
+    coverages,
+    related,
+    // 직접 해당하는 담보가 하나도 없으면 "없다"고 말한다.
+    // 곁가지만 남았는데 찾았다고 하면 그게 더 나쁘다.
+    noCoverage: coverages.length === 0,
+    score: picked.score,
+  };
+}
+
+/**
+ * 같은 계약의 같은 담보가 두 줄로 오는 경우가 있다(대상기관이 갱신 이력을 그대로 준다).
+ * 화면에 같은 카드를 두 번 세우면 "두 건 청구할 수 있다"로 읽힌다.
+ */
+function dedupe(items: CoverageCandidate[]): CoverageCandidate[] {
+  const seen = new Set<string>();
+  const out: CoverageCandidate[] = [];
+  for (const c of items) {
+    const key = `${c.policyId}|${squash(c.name)}|${c.amount ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+  return out;
+}
+
+/** 담보명은 띄어쓰기·괄호가 제각각이라 비교 전에 눌러둔다. */
+function squash(name: string): string {
+  return (name ?? '').replace(/[\s()（）[\]]/g, '');
+}
+
+/**
+ * 다쳐서인가, 아파서인가.
+ *
+ * 국내 담보는 같은 보장을 상해형·질병형으로 나눠 판다. 감기로 통원했는데 「상해통원의료비」를
+ * 앞에 세우면 틀린 안내다. 문장에서 원인을 읽어 반대편 담보를 뒤로 물린다.
+ * 판단이 안 서면 null 을 돌려주고 아무것도 거르지 않는다 — 애매할 때 지우는 쪽이 더 위험하다.
+ */
+export type IncidentCause = 'injury' | 'illness';
+
+const INJURY_WORDS = ['넘어', '다쳤', '다침', '부러', '골절', '삐', '접질', '베였', '데였', '화상', '부딪', '충돌', '사고', '깁스', '타박', '상해', '외상'];
+const ILLNESS_WORDS = ['감기', '몸살', '독감', '염증', '질환', '질병', '아파', '아팠', '열이', '병이', '진단받', '암', '뇌졸중', '뇌출혈', '심근경색', '종양', '위염', '장염', '알레르기', '피부염'];
+
+export function causeOf(text: string): IncidentCause | null {
+  const q = normalizeQuery(text);
+  const injury = INJURY_WORDS.filter((w) => q.includes(w)).length;
+  const illness = ILLNESS_WORDS.filter((w) => q.includes(w)).length;
+  if (injury === illness) return null;
+  return injury > illness ? 'injury' : 'illness';
+}
+
+/** 담보명이 원인과 반대편이면 true. 상해형/질병형이 이름에 드러난 담보만 걸린다. */
+export function contradictsCause(name: string, cause: IncidentCause | null): boolean {
+  if (cause === null) return false;
+  const n = squash(name);
+  const isInjuryCoverage = /^(상해|재해)/.test(n);
+  const isIllnessCoverage = /^질병/.test(n);
+  if (cause === 'injury') return isIllnessCoverage;
+  return isInjuryCoverage;
+}
+
+/**
+ * 계약별로 묶는다.
+ *
+ * 사람이 읽는 순서는 「이 사고 → 내가 든 이 보험 → 그 안의 이 담보 → 이 금액 → 이렇게 접수」다.
+ * 담보만 평평하게 늘어놓으면 어느 보험사에 무엇을 넣어야 하는지가 사라진다.
+ */
+export type PolicyGroup = {
+  policyId: string;
+  memberName: string;
+  insurerName: string;
+  productName: string;
+  coverages: MatchedCoverage[];
+};
+
+export function groupByPolicy(coverages: MatchedCoverage[]): PolicyGroup[] {
+  const groups = new Map<string, PolicyGroup>();
+  for (const c of coverages) {
+    const key = c.policyId;
+    const found = groups.get(key);
+    if (found) {
+      found.coverages.push(c);
+      continue;
+    }
+    groups.set(key, {
+      policyId: c.policyId,
+      memberName: c.memberName,
+      insurerName: c.insurerName,
+      productName: c.productName,
+      coverages: [c],
+    });
+  }
+  // 계약 순서는 첫 담보의 순위를 따른다 — 가장 직접적인 담보를 가진 계약이 먼저다.
+  return [...groups.values()];
 }
 
 /** 보험금 청구권 소멸시효 3년. 사고일에서 남은 일수를 센다. */

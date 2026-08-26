@@ -410,6 +410,58 @@ left join lateral (
 left join member_avatar a on a.member_id = m.id;
 
 
+-- ─────────────────────────────────────────────── 0009_document_blob.sql
+
+-- 약관 원본 보관.
+--
+-- 사용자가 보험사 공시실에서 받은 약관 PDF 를 앱에 넣으면, 우리는 조항을 뽑아
+-- 인용 근거로 쓴다. 그런데 사용자에게도 **원본 파일 자체**가 필요할 때가 있다 —
+-- 분쟁 시 제출, 손해사정사에게 전달, 다른 기기에서 열어보기.
+-- 그래서 파싱한 조항만 남기지 않고 파일을 그대로 보관해 다시 내려줄 수 있게 한다.
+--
+-- 외부 스토리지를 두지 않는 이유는 프로필 사진과 같다: 버킷 권한·서명 URL 만료가
+-- 또 하나의 실패 지점이 된다. 약관은 보통 1~10MB 이고 가구당 수십 건을 넘지 않는다.
+
+create table if not exists document_blob (
+  document_id uuid primary key references document(id) on delete cascade,
+  bytes       bytea not null,
+  byte_size   integer not null check (byte_size > 0 and byte_size <= 41943040), -- 40MB
+  mime        text not null check (mime in ('application/pdf','text/plain')),
+  file_name   text not null,
+  created_at  timestamptz not null default now()
+);
+
+-- 어느 계약의 약관인지 화면이 바로 묻는다.
+create index if not exists document_policy_kind_idx on document(policy_id, kind);
+
+
+-- ─────────────────────────────────────────────── 0011_shared_terms.sql
+
+-- 약관을 사용자별이 아니라 **상품별**로 다룬다.
+--
+-- 「(무)메리츠 올바른 암보험1906」의 약관은 그 상품에 가입한 모든 사람에게 똑같다.
+-- 사용자마다 한 번씩 공시실에서 받아 올리게 하면, 같은 파일을 수천 번 다시 넣는 셈이다.
+-- 한 사람이 올린 조항을 같은 상품 가입자가 함께 쓰면 대부분의 사용자는 아무것도
+-- 하지 않아도 된다 — 그게 이 앱이 하려는 일이다.
+--
+-- 다만 **PDF 원본 파일은 공유하지 않는다.** 조항 인용(출처를 밝힌 부분 인용)과
+-- 파일 사본 배포는 다른 문제다. 원본은 올린 본인만 다시 내려받고, 다른 사람에게는
+-- 보험사 공시실 링크를 준다.
+
+alter table document add column if not exists product_key text;
+
+-- 조항을 같은 상품 가입자와 나눌지. 기본은 나눈다.
+alter table document add column if not exists share_clauses boolean not null default true;
+
+create index if not exists document_product_key_idx
+  on document(product_key) where product_key is not null;
+
+-- 계약 쪽에도 같은 키를 둔다. 조회할 때마다 회사·상품명을 정규화하지 않도록.
+alter table policy add column if not exists product_key text;
+create index if not exists policy_product_key_idx
+  on policy(product_key) where product_key is not null;
+
+
 -- ─────────────────────────────────────────────── 0003_rls_supabase.sql
 
 -- Supabase 로 옮길 때만 적용한다. 로컬 Postgres 에서는 auth 스키마가 없어 실패한다.
@@ -511,6 +563,50 @@ create policy member_avatar_rw on member_avatar
   for all using (member_id in (select id from member where household_id in (select current_household_ids())));
 
 
+-- ─────────────────────────────────────────────── 0010_rls_document_blob_supabase.sql
+
+-- Supabase 전용. 약관 원본도 같은 가구 안에서만 읽고 쓴다.
+alter table document_blob enable row level security;
+
+create policy document_blob_rw on document_blob
+  for all using (
+    document_id in (
+      select d.id from document d
+      where (d.policy_id is not null and d.policy_id in (
+              select id from policy where member_id in
+                (select id from member where household_id in (select current_household_ids()))))
+         or (d.member_id is not null and d.member_id in
+              (select id from member where household_id in (select current_household_ids())))
+    )
+  );
+
+
+-- ─────────────────────────────────────────────── 0012_rls_shared_terms_supabase.sql
+
+-- Supabase 전용.
+--
+-- 기본 document 정책은 "내 가구의 문서만" 이다. 여기에 **조항 공유용 읽기**를 더한다.
+-- 내가 가입한 상품과 product_key 가 같고 share_clauses 인 문서는 읽을 수 있다.
+-- 파일 원본(document_blob)에는 이 권한을 주지 않는다 — 조항만 나눈다.
+
+create policy document_shared_read on document
+  for select using (
+    share_clauses
+    and product_key is not null
+    and product_key in (
+      select p.product_key from policy p
+       join member m on m.id = p.member_id
+      where m.household_id in (select current_household_ids())
+        and p.product_key is not null
+    )
+  );
+
+create policy term_clause_shared_read on term_clause
+  for select using (
+    document_id in (select id from document where share_clauses and product_key is not null)
+  );
+
+
 -- ─────────────────────────────────────────────── 적용 이력 기록
 -- 나중에 로컬 마이그레이션 스크립트를 이 DB 로 돌릴 때 중복 적용되지 않게 표시해 둔다.
 create table if not exists schema_migrations (
@@ -523,7 +619,11 @@ insert into schema_migrations (name) values
   ('0004_member_view_minor.sql'),
   ('0005_term_clause.sql'),
   ('0007_member_avatar.sql'),
+  ('0009_document_blob.sql'),
+  ('0011_shared_terms.sql'),
   ('0003_rls_supabase.sql'),
   ('0006_rls_terms.sql'),
-  ('0008_rls_avatar_supabase.sql')
+  ('0008_rls_avatar_supabase.sql'),
+  ('0010_rls_document_blob_supabase.sql'),
+  ('0012_rls_shared_terms_supabase.sql')
 on conflict (name) do nothing;

@@ -52,9 +52,11 @@ describe('AI 결과 플래그십', () => {
     }
   });
 
-  it('한도 합계에 "실제로 받는 금액이 아니다" 를 반드시 붙인다 — 손해사정업 경계', () => {
+  it('담보 금액을 합산하지 않는다 — 실손·정액·일당은 단위가 다르다', () => {
     const ai = readFileSync('src/app/ai/claim-search.tsx', 'utf8');
-    expect(ai).toContain('약관상 한도 합계');
-    expect(ai).toContain('실제로 받는 금액이 아닙니다');
+    expect(ai).toContain('금액을 합산하지 않습니다');
+    // 합계를 다시 들여오면 10019.2억원 사건이 반복된다.
+    expect(ai).not.toContain('한도 합계');
+    expect(ai).not.toMatch(/reduce\(\(sum/);
   });
 });

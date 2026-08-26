@@ -61,6 +61,48 @@ describe('parseAmount', () => {
     expect(parseAmount(undefined)).toBeNull();
     expect(parseAmount(null)).toBeNull();
   });
+
+  // ── 10019.2억원 사건 ────────────────────────────────────────────
+  // 옛 구현은 숫자가 아닌 문자를 전부 지우고 남은 자릿수를 통째로 Number() 했다.
+  // 그래서 한 칸에 숫자가 둘 이상 담긴 담보에서 수십조가 나왔다.
+
+  it('금액이 둘 이상 섞이면 이어붙이지 않고 null 을 돌려준다', () => {
+    // 옛 구현은 각각 30000000100000(30조) · 500000010000000 을 만들었다.
+    expect(parseAmount('가입금액 30,000,000 / 1일 100,000')).toBeNull();
+    expect(parseAmount('2종 5,000,000 3종 10,000,000')).toBeNull();
+  });
+
+  it('금액이 아닌 수식어는 세지 않는다 — 남은 숫자가 하나면 읽는다', () => {
+    expect(parseAmount('1일당 30,000원 (최대 180일)')).toBe(30000);
+    expect(parseAmount('1일당 30,000원')).toBe(30000);
+    expect(parseAmount('가입금액 50,000,000원')).toBe(50000000);
+  });
+
+  it('한글 단위를 원 단위로 편다', () => {
+    expect(parseAmount('3,000만원')).toBe(30_000_000);
+    expect(parseAmount('5천만원')).toBe(50_000_000);
+    expect(parseAmount('1억')).toBe(100_000_000);
+    expect(parseAmount('1억 5,000만원')).toBe(150_000_000);
+    expect(parseAmount('1만 5000원')).toBe(15_000);
+  });
+
+  it('단위가 커졌다 작아졌다 하면 두 금액이 섞인 것이므로 null', () => {
+    expect(parseAmount('만기 3천 / 1억')).toBeNull();
+  });
+
+  it('9만 늘어선 값은 금액이 아니라 자리표시자다', () => {
+    // 실제 데이터: 해외여행중배상책임 · 화재(폭발포함)배상책임(실손) 3건이 이 값으로 들어왔고,
+    // 그 한 건이 합계에 얹혀 화면에 10019.2억원이 찍혔다.
+    expect(parseAmount('999999999999')).toBeNull();
+    expect(parseAmount('999,999,999,999원')).toBeNull();
+    // 9가 섞여 있을 뿐인 진짜 금액은 그대로 읽는다.
+    expect(parseAmount('99,000,000')).toBe(99_000_000);
+    expect(parseAmount('999999')).toBe(999999);
+  });
+
+  it('음수는 금액이 아니다', () => {
+    expect(parseAmount('-50000')).toBe(50000);
+  });
 });
 
 describe('normalizeStatus', () => {

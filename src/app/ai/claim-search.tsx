@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import {
+  groupByPolicy,
   matchIncident,
   type CoverageCandidate,
+  type MatchedCoverage,
   type MatchResult,
 } from '@/lib/domain/incident-match';
+import { BASIS_LABEL, BASIS_SUFFIX } from '@/lib/domain/coverage-basis';
 import { Beoni } from '../_components/brand';
 import type { ClauseCitation } from '@/lib/repo/terms';
 import { Card, Disclaimer, Icon, ICONS, Pill, shortWon } from '../_components/ui';
@@ -162,18 +165,77 @@ function UnknownResult() {
   );
 }
 
-/** 담보 금액 합계. 확정 지급액이 아니라 "약관상 한도의 합" 이라는 점을 화면이 밝힌다. */
-function sumAmount(coverages: Extract<MatchResult, { kind: 'matched' }>['coverages']): number | null {
-  let total = 0;
-  let known = 0;
-  for (const c of coverages) {
-    const n = c.amount === null ? NaN : Number(c.amount);
-    if (Number.isFinite(n)) {
-      total += n;
-      known += 1;
-    }
-  }
-  return known > 0 ? total : null;
+/**
+ * 담보 한 줄.
+ *
+ * 금액 옆에 **지급 방식**을 반드시 붙인다. 5,000만원이 「연간 한도」인지 「1회 정액」인지
+ * 「하루치」인지가 신청 방법을 바꾼다. 이걸 안 적으면 세 숫자가 같은 것처럼 읽힌다.
+ */
+function CoverageLine({ c }: { c: MatchedCoverage }) {
+  return (
+    <div className="border-t pt-2.5 first:border-0 first:pt-0" style={{ borderColor: 'var(--line)' }}>
+      <div className="flex items-start justify-between gap-3">
+        <b className="text-[15px] leading-snug" style={{ color: 'var(--brand-ink)' }}>
+          {c.name}
+        </b>
+        <span className="flex-none text-right">
+          {c.shownAmount === null ? (
+            <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
+              가입금액 확인 필요
+            </span>
+          ) : (
+            <b className="grad-num tnum text-[18px] font-extrabold">
+              {shortWon(c.shownAmount)}원
+            </b>
+          )}
+        </span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Pill tone={c.basis === 'actual' ? 'ok' : 'grey'}>{BASIS_LABEL[c.basis]}</Pill>
+        {BASIS_SUFFIX[c.basis] ? (
+          <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
+            {BASIS_SUFFIX[c.basis]}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** 계약 하나 = 접수처 하나. 이 묶음이 곧 "어디에 무엇을 넣을지" 다. */
+function PolicyCard({
+  group,
+  index,
+}: {
+  group: ReturnType<typeof groupByPolicy>[number];
+  index: number;
+}) {
+  return (
+    <div className="glowcard">
+      <div className="inner">
+        <div className="flex items-center gap-2">
+          <span
+            className="grid size-[22px] flex-none place-items-center rounded-full text-[13px] font-bold text-white"
+            style={{ background: 'var(--brand)' }}
+          >
+            {index + 1}
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-[15px] leading-snug">{group.insurerName}</b>
+            <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
+              {group.productName}
+            </span>
+          </span>
+          <Pill tone="ok">{group.memberName}</Pill>
+        </div>
+        <div className="mt-2.5 flex flex-col gap-2.5">
+          {group.coverages.map((c, i) => (
+            <CoverageLine key={`${c.policyId}-${c.name}-${i}`} c={c} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function MatchedResult({
@@ -183,8 +245,7 @@ function MatchedResult({
   result: Extract<MatchResult, { kind: 'matched' }>;
   citation: ClauseCitation | null;
 }) {
-  const { rule, coverages, noCoverage } = result;
-  const total = sumAmount(coverages);
+  const { rule, coverages, related, noCoverage } = result;
 
   // 담보를 못 찾았을 때는 히어로를 쓰지 않는다. 화려한 판 위에 나쁜 소식을 얹으면
   // 무엇을 읽어야 할지 알 수 없다.
@@ -205,11 +266,27 @@ function MatchedResult({
             이 사고에 통상 적용되는 내용이니 다른 가족 계약이나 상대방 보험을 확인해보세요.
           </p>
         </Card>
+        <RelatedCoverages items={related} />
         <ClauseCard citation={citation} fallback={rule.quote} />
         <ClaimGuide rule={rule} />
       </>
     );
   }
+
+  const groups = groupByPolicy(coverages);
+  const byBasis = {
+    actual: coverages.filter((c) => c.basis === 'actual').length,
+    lumpsum: coverages.filter((c) => c.basis === 'lumpsum').length,
+    daily: coverages.filter((c) => c.basis === 'daily').length,
+  };
+  // 지급 방식별 건수. 금액을 더하지 않는다 — 실손 한도·1회 정액·하루치는 단위가 다르다.
+  const mix = [
+    byBasis.actual > 0 ? `실손 ${byBasis.actual}` : null,
+    byBasis.lumpsum > 0 ? `정액 ${byBasis.lumpsum}` : null,
+    byBasis.daily > 0 ? `일당 ${byBasis.daily}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <>
@@ -229,7 +306,7 @@ function MatchedResult({
         <div className="slab">
           <span className="min-w-0 flex-1">
             <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
-              적용 가능한 담보
+              청구할 담보
             </span>
             <b className="grad-num tnum text-[24px] leading-tight font-extrabold">
               {coverages.length}건
@@ -238,41 +315,24 @@ function MatchedResult({
           <span className="w-px self-stretch" style={{ background: 'var(--line)' }} />
           <span className="min-w-0 flex-1 text-right">
             <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
-              약관상 한도 합계
+              접수할 곳
             </span>
             <b className="grad-num tnum text-[24px] leading-tight font-extrabold">
-              {total === null ? '—' : `${shortWon(total)}원`}
+              {groups.length}곳
             </b>
           </span>
         </div>
-        <p className="mt-2 text-[13px]" style={{ color: 'rgba(255,255,255,.78)' }}>
-          한도의 합계일 뿐, 실제로 받는 금액이 아닙니다.
-        </p>
+        {mix ? (
+          <p className="mt-2 text-[13px]" style={{ color: 'rgba(255,255,255,.78)' }}>
+            {mix} · 지급 방식이 달라 금액을 합산하지 않습니다.
+          </p>
+        ) : null}
       </div>
 
-      {/* 담보 타일 — 그라디언트 테두리로 하나씩 세운다. */}
+      {/* 어느 보험의 · 어느 담보를 · 얼마 기준으로 */}
       <div className="flex flex-col gap-2.5">
-        {coverages.map((c, i) => (
-          <div key={`${c.policyId}-${c.name}-${i}`} className="glowcard">
-            <div className="inner">
-              <div className="flex items-start justify-between gap-3">
-                <b className="text-[16px] leading-snug" style={{ color: 'var(--brand-ink)' }}>
-                  {c.name}
-                </b>
-                <span className="grad-num tnum flex-none text-[19px] font-extrabold">
-                  {c.amount === null || !Number.isFinite(Number(c.amount))
-                    ? '—'
-                    : `${shortWon(Number(c.amount))}원`}
-                </span>
-              </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <Pill tone="ok">{c.memberName}</Pill>
-                <span className="text-[14px]" style={{ color: 'var(--ink-2)' }}>
-                  {c.insurerName} · {c.productName}
-                </span>
-              </div>
-            </div>
-          </div>
+        {groups.map((g, i) => (
+          <PolicyCard key={g.policyId} group={g} index={i} />
         ))}
       </div>
 
@@ -282,9 +342,38 @@ function MatchedResult({
         </p>
       </Card>
 
+      <RelatedCoverages items={related} />
       <ClauseCard citation={citation} fallback={rule.quote} />
       <ClaimGuide rule={rule} />
     </>
+  );
+}
+
+/**
+ * 곁가지 담보.
+ *
+ * 같은 분류에 있지만 담보 이름이 이 사고와 직접 이어지지 않는 것들이다.
+ * 지우지 않는 이유: 판단은 사람이 한다. 앞에 세우지 않는 이유: 감기로 통원했는데
+ * 암진단비까지 31건이 늘어서면 정작 넣어야 할 담보가 묻힌다.
+ */
+function RelatedCoverages({ items }: { items: MatchedCoverage[] }) {
+  if (items.length === 0) return null;
+  return (
+    <Card className="!p-0">
+      <details>
+        <summary className="cursor-pointer px-4 py-3.5 text-[15px] font-semibold">
+          같은 분류의 다른 담보 {items.length}건
+          <span className="ml-1.5 font-normal" style={{ color: 'var(--ink-3)' }}>
+            직접 해당하진 않아요
+          </span>
+        </summary>
+        <div className="flex flex-col gap-2.5 px-4 pt-1 pb-3.5">
+          {items.map((c, i) => (
+            <CoverageLine key={`${c.policyId}-${c.name}-${i}`} c={c} />
+          ))}
+        </div>
+      </details>
+    </Card>
   );
 }
 

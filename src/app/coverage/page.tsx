@@ -2,6 +2,7 @@ import { CORE_CATEGORIES } from '@/lib/repo/dashboard';
 import { getHouseholdView } from '@/lib/repo/view-data';
 import { CATEGORY_LABELS } from '@/lib/domain/coverage-category';
 import { Card, Disclaimer, Pill, SectionTitle, Won, shortWon } from '../_components/ui';
+import { isSaneTotal } from '@/lib/domain/coverage-basis';
 import { ConnectCard, PreviewNotice } from '../_components/connect';
 import { DataSourceNotice } from '../_components/data-source';
 import { DataErrorCard } from '../_components/data-error';
@@ -173,7 +174,7 @@ export default async function CoveragePage() {
                               className="block rounded-[8px] px-1 py-1.5 text-[14px] font-bold"
                               style={{ background: 'var(--brand-soft)', color: 'var(--brand-ink)' }}
                             >
-                              {shortWon(amount) || '있음'}
+                              {isSaneTotal(amount) ? shortWon(amount) : `${count}개`}
                             </span>
                           ) : gap ? (
                             <span

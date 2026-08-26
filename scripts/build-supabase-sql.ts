@@ -16,9 +16,13 @@ const ORDER = [
   '0004_member_view_minor.sql',
   '0005_term_clause.sql',
   '0007_member_avatar.sql',
+  '0009_document_blob.sql',
+  '0011_shared_terms.sql',
   '0003_rls_supabase.sql',
   '0006_rls_terms.sql',
   '0008_rls_avatar_supabase.sql',
+  '0010_rls_document_blob_supabase.sql',
+  '0012_rls_shared_terms_supabase.sql',
 ];
 
 const DIR = join(process.cwd(), 'db', 'migrations');
