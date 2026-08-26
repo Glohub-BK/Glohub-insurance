@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 276 130" width="276" height="130" role="img" aria-label="놓칠뻔 가로형 로고">
+  <defs>
+    <linearGradient id="d-body" x1="26%" y1="4%" x2="74%" y2="100%">
+      <stop offset="0" stop-color="#c8517f"/><stop offset=".52" stop-color="#a32a5e"/><stop offset="1" stop-color="#6f1740"/>
+    </linearGradient>
+    <radialGradient id="d-spec" cx="34%" cy="26%" r="34%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".78"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="d-rim" cx="62%" cy="86%" r="46%">
+      <stop offset="0" stop-color="#ffd7e6" stop-opacity=".5"/><stop offset="1" stop-color="#ffd7e6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="d-shadow" x="-45%" y="-25%" width="190%" height="180%">
+      <feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#3c0c24" flood-opacity=".26"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#3c0c24" flood-opacity=".2"/>
+    </filter>
+    <filter id="d-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    <clipPath id="d-clip"><path d="M100 12C100 12 172 94 172 144A72 72 0 1 1 28 144C28 94 100 12 100 12Z"/></clipPath>
+  </defs>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #f0e7ec; }
+      .ground { opacity: .28; }
+    }
+  </style>
+  <ellipse class="ground" cx="205.7" cy="108.0" rx="27.2" ry="5" fill="#3c0c24" opacity=".12"/>
+  <path d="M1566 -568H1026V-684H736V-568H196V-356H1566ZM1546 -1298H546V-1616H258V-1076H752V-960H46V-732H1724V-960H1038V-1076H1546ZM880 -312C524 -312 314 -222 314 -62C314 102 524 194 880 192C1236 194 1448 102 1448 -62C1448 -222 1236 -312 880 -312ZM880 -118C1054 -118 1142 -108 1144 -62C1142 -14 1054 -2 880 -2C704 -2 620 -14 620 -62C620 -108 704 -118 880 -118Z" fill="#2a1119" class="ink" transform="translate(20.00 100.00) scale(0.03613)"/><path d="M1590 -1644H1302V-684H1590ZM1590 -622H346V-406H1302V-324H352V182H1634V-38H632V-126H1590ZM1136 -1492H778V-1650H486V-1492H126V-1268H482C456 -1115 329 -968 58 -908L184 -682C404 -733 551 -847 636 -994C719 -857 865 -750 1084 -706L1210 -924C934 -978 806 -1123 782 -1268H1136Z" fill="#2a1119" class="ink" transform="translate(81.74 100.00) scale(0.03613)"/>
+  <g transform="translate(155.7 -3.0) scale(0.5)"><g filter="url(#d-shadow)"><path d="M100 12C100 12 172 94 172 144A72 72 0 1 1 28 144C28 94 100 12 100 12Z" fill="url(#d-body)"/><g clip-path="url(#d-clip)"><ellipse cx="118" cy="188" rx="86" ry="52" fill="url(#d-rim)"/><ellipse cx="70" cy="66" rx="40" ry="30" fill="url(#d-spec)" filter="url(#d-blur)"/><path d="M78 44C64 62 54 80 52 100" stroke="#ffffff" stroke-opacity=".6" stroke-width="9" stroke-linecap="round" fill="none"/></g><path d="M100 12C100 12 172 94 172 144A72 72 0 1 1 28 144C28 94 100 12 100 12Z" fill="none" stroke="#5c1435" stroke-opacity=".26" stroke-width="2"/><path d="M1650 -1644H1366V-1156H1240V-1504H1012V-1238H926V-1504H694V-566H1240V-924H1366V-296H1650ZM310 -1504H74V-566H630V-1504H396V-1238H310ZM310 -794V-1020H396V-794ZM926 -794V-1020H1012V-794ZM1696 -68H626V-432H338V162H1696Z" fill="#ffffff" transform="translate(58.52 180.73) scale(0.04688)"/></g></g>
+</svg>

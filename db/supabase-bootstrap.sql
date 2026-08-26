@@ -1,8 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════════
---  보장맵 — Supabase 부트스트랩 (한 번에 붙여넣기용)
+--  놓칠뻔 — Supabase 부트스트랩 (한 번에 붙여넣기용)
 --
 --  사용법: Supabase 대시보드 → SQL Editor → 아래 전체를 붙여넣고 Run
---  적용 순서: 테이블 → 뷰 → 뷰 보강 → RLS
+--  적용 순서: 테이블 → 뷰 → 뷰 보강 → 약관 조항 → RLS → 약관 RLS
 --
 --  이 파일은 db/migrations/*.sql 을 순서대로 이어붙인 것입니다.
 --  스키마가 바뀌면 `npm run db:supabase-sql` 로 다시 생성하세요.
@@ -327,6 +327,89 @@ left join lateral (
 ) s on true;
 
 
+-- ─────────────────────────────────────────────── 0005_term_clause.sql
+
+-- 약관 조항 저장.
+--
+-- 지금 AI 청구 화면이 보여주는 약관 문구는 규칙 파일에 하드코딩된 "예시"다.
+-- 실제 가입 상품의 약관은 상품마다 다르므로, 사용자가 받은 약관 파일에서 조항을
+-- 뽑아 이 표에 넣고 화면은 그것을 우선 인용한다.
+--
+-- 원문을 그대로 보관하는 이유: 요약하면 인용이 아니라 우리 해석이 된다.
+-- 판단 근거는 원문이어야 하고, 출처(어느 문서 몇 조)를 항상 함께 보여준다.
+
+alter table document add column if not exists insurer_name text;
+alter table document add column if not exists product_name text;
+alter table document add column if not exists effective_on date;
+alter table document add column if not exists content_hash text;
+
+-- 같은 약관을 두 번 넣으면 조항이 중복된다. 파일 해시로 막는다.
+create unique index if not exists document_content_hash_idx
+  on document(content_hash) where content_hash is not null;
+
+create table if not exists term_clause (
+  id            uuid primary key default gen_random_uuid(),
+  document_id   uuid not null references document(id) on delete cascade,
+  ord           int  not null,               -- 문서 내 순서
+  article_no    int,                         -- 제N조의 N. 부칙 등 번호가 없으면 null
+  article_label text not null,               -- '제5조' 처럼 화면에 그대로 쓰는 라벨
+  title         text,                        -- 조 제목 (괄호 안)
+  body          text not null,               -- 조항 원문
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists term_clause_document_idx on term_clause(document_id);
+
+-- 조항 검색은 본문 부분일치로 한다. 한국어 형태소 사전이 없어도 동작해야 하기 때문이다.
+-- pg_trgm 은 Supabase 에 기본 포함되어 있고, 없으면 인덱스 없이도 동작한다(느릴 뿐).
+create extension if not exists "pg_trgm";
+create index if not exists term_clause_body_idx on term_clause using gin (body gin_trgm_ops);
+
+
+-- ─────────────────────────────────────────────── 0007_member_avatar.sql
+
+-- 프로필 사진.
+--
+-- 파일을 외부 스토리지에 두면 서명 URL 발급·만료·버킷 권한이 또 하나의 실패 지점이 된다.
+-- 여기서 받는 건 클라이언트가 정사각으로 잘라 256px 로 줄인 이미지라 수십 KB 다.
+-- 그 크기라면 DB 에 두고 라우트 핸들러로 흘려보내는 편이 단순하고, RLS 를 그대로 탄다.
+-- 원본은 서버로 보내지 않는다 — 크롭·축소는 기기에서 끝낸다.
+
+create table if not exists member_avatar (
+  member_id  uuid primary key references member(id) on delete cascade,
+  mime       text not null check (mime in ('image/webp','image/png','image/jpeg')),
+  bytes      bytea not null,
+  byte_size  integer not null check (byte_size > 0 and byte_size <= 512000),
+  width      integer not null check (width between 16 and 1024),
+  updated_at timestamptz not null default now()
+);
+
+-- 뷰에 컬럼을 더한다. create or replace view 는 뒤에 붙이는 것만 허용하므로 순서를 지킨다.
+-- 화면은 이 값을 사진 URL 의 캐시 버스터로 쓴다. 사진 자체는 뷰에 싣지 않는다 —
+-- 구성원 목록을 읽을 때마다 이미지 바이트까지 딸려오면 안 된다.
+create or replace view member_sync_status as
+select
+  m.id                as member_id,
+  m.household_id,
+  m.display_name,
+  m.relation,
+  s.id                as last_run_id,
+  s.status            as last_run_status,
+  s.requested_at      as last_synced_at,
+  s.policy_count      as last_policy_count,
+  m.is_minor,
+  m.guardian_consent_at,
+  a.updated_at        as avatar_updated_at
+from member m
+left join lateral (
+  select * from sync_run r
+  where r.member_id = m.id
+  order by r.requested_at desc
+  limit 1
+) s on true
+left join member_avatar a on a.member_id = m.id;
+
+
 -- ─────────────────────────────────────────────── 0003_rls_supabase.sql
 
 -- Supabase 로 옮길 때만 적용한다. 로컬 Postgres 에서는 auth 스키마가 없어 실패한다.
@@ -392,6 +475,42 @@ create policy claim_rw on claim
   for all using (incident_id in (select id from incident where household_id in (select current_household_ids())));
 
 
+-- ─────────────────────────────────────────────── 0006_rls_terms.sql
+
+-- 약관 조항 RLS.
+--
+-- 0005 는 0003(RLS)보다 먼저 실행되므로 그 안에서 current_household_ids() 를 쓸 수 없다.
+-- 그래서 조항 보호는 여기서 따로 건다. 이 파일을 빼먹으면 term_clause 만 RLS 없이
+-- 열려 있게 된다 — 다른 가구의 약관 조항이 읽힌다.
+--
+-- 조항은 문서에 속하고, 문서 접근 규칙은 이미 document_rw 에 있다. 같은 규칙을
+-- 다시 쓰지 않고 문서 소유를 그대로 따라간다.
+
+alter table term_clause enable row level security;
+
+drop policy if exists term_clause_rw on term_clause;
+create policy term_clause_rw on term_clause
+  for all using (
+    document_id in (
+      select d.id from document d
+       where (d.policy_id is not null and d.policy_id in (
+               select p.id from policy p
+                where p.member_id in (select id from member where household_id in (select current_household_ids()))))
+          or (d.member_id is not null and d.member_id in (
+               select id from member where household_id in (select current_household_ids())))
+    )
+  );
+
+
+-- ─────────────────────────────────────────────── 0008_rls_avatar_supabase.sql
+
+-- Supabase 전용. 사진도 같은 가구 안에서만 읽고 쓴다.
+alter table member_avatar enable row level security;
+
+create policy member_avatar_rw on member_avatar
+  for all using (member_id in (select id from member where household_id in (select current_household_ids())));
+
+
 -- ─────────────────────────────────────────────── 적용 이력 기록
 -- 나중에 로컬 마이그레이션 스크립트를 이 DB 로 돌릴 때 중복 적용되지 않게 표시해 둔다.
 create table if not exists schema_migrations (
@@ -402,5 +521,9 @@ insert into schema_migrations (name) values
   ('0001_init.sql'),
   ('0002_views.sql'),
   ('0004_member_view_minor.sql'),
-  ('0003_rls_supabase.sql')
+  ('0005_term_clause.sql'),
+  ('0007_member_avatar.sql'),
+  ('0003_rls_supabase.sql'),
+  ('0006_rls_terms.sql'),
+  ('0008_rls_avatar_supabase.sql')
 on conflict (name) do nothing;

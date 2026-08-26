@@ -1,4 +1,6 @@
-# 가족 보험 통합관리
+# 놓칠뻔
+
+> 우리집 보험, 놓치지 않게.
 
 가입한 보험을 한곳에 모아 보고, 사고가 났을 때 **어떤 보험이 그 사고에 적용되는지** 판단해
 청구를 놓치지 않게 하는 도구.
@@ -29,6 +31,18 @@ npm run db:supabase-sql   # db/supabase-bootstrap.sql 생성
 생성된 파일을 Supabase 대시보드 → **SQL Editor** 에 통째로 붙여넣고 Run 하면
 테이블·뷰·RLS 가 한 번에 올라갑니다. 그다음 `.env.local` 의 `DATABASE_URL` 을
 Supabase 연결 문자열로 바꾸면 됩니다.
+
+**SQL 을 대시보드에서 직접 돌렸다면 이력을 먼저 맞춰야 합니다.**
+
+```bash
+npm run db:baseline   # 실행하지 않고 "이미 적용됨"으로만 기록
+npm run db:migrate    # → 변경 없음 — 이미 최신입니다.
+```
+
+`db:baseline` 없이 `db:migrate` 를 돌리면 0001 부터 다시 실행하려다
+`relation "household" already exists` 로 죽습니다. 스키마는 있는데 이 스크립트가
+그걸 모르기 때문입니다. (`supabase-bootstrap.sql` 로 올렸다면 이력이 함께 기록되므로
+baseline 이 필요 없습니다.)
 
 RLS 를 켜면 `member_account` 매핑이 있는 사용자만 데이터를 봅니다. 로그인(S6)을
 붙이기 전에는 대시보드(service_role)로만 조회되는 것이 정상입니다.

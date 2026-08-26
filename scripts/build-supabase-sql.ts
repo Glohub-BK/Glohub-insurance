@@ -14,17 +14,21 @@ const ORDER = [
   '0001_init.sql',
   '0002_views.sql',
   '0004_member_view_minor.sql',
+  '0005_term_clause.sql',
+  '0007_member_avatar.sql',
   '0003_rls_supabase.sql',
+  '0006_rls_terms.sql',
+  '0008_rls_avatar_supabase.sql',
 ];
 
 const DIR = join(process.cwd(), 'db', 'migrations');
 const OUT = join(process.cwd(), 'db', 'supabase-bootstrap.sql');
 
 const HEAD = `-- ═══════════════════════════════════════════════════════════════════════
---  보장맵 — Supabase 부트스트랩 (한 번에 붙여넣기용)
+--  놓칠뻔 — Supabase 부트스트랩 (한 번에 붙여넣기용)
 --
 --  사용법: Supabase 대시보드 → SQL Editor → 아래 전체를 붙여넣고 Run
---  적용 순서: 테이블 → 뷰 → 뷰 보강 → RLS
+--  적용 순서: 테이블 → 뷰 → 뷰 보강 → 약관 조항 → RLS → 약관 RLS
 --
 --  이 파일은 db/migrations/*.sql 을 순서대로 이어붙인 것입니다.
 --  스키마가 바뀌면 \`npm run db:supabase-sql\` 로 다시 생성하세요.

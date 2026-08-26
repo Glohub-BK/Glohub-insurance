@@ -1,9 +1,12 @@
 import Link from 'next/link';
-import { CORE_CATEGORIES, getCoverageMatrix, getCoverages, getMembers, getPolicies } from '@/lib/repo/dashboard';
-import { getCurrentHousehold } from '@/lib/repo/household';
+import { CORE_CATEGORIES } from '@/lib/repo/dashboard';
+import { getHouseholdView } from '@/lib/repo/view-data';
 import { CATEGORY_LABELS } from '@/lib/domain/coverage-category';
 import { Avatar, Card, Icon, ICONS, Pill, SectionTitle } from '../_components/ui';
-import { EmptyHousehold } from '../_components/empty';
+import { ConnectCard, PreviewNotice } from '../_components/connect';
+import { DataSourceNotice } from '../_components/data-source';
+import { DataErrorCard } from '../_components/data-error';
+import { Beoni } from '../_components/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,21 +18,22 @@ function daysAgo(iso: string | null, now: Date): number | null {
 }
 
 export default async function FamilyPage() {
-  const household = await getCurrentHousehold();
-  if (!household) return <EmptyHousehold />;
-
-  const [members, matrix, policies, coverages] = await Promise.all([
-    getMembers(household.id),
-    getCoverageMatrix(household.id),
-    getPolicies(household.id),
-    getCoverages(household.id),
-  ]);
+  const { mode, dataEnvironment, members, matrix, policies, coverages } = await getHouseholdView();
+  if (mode === 'error') return <DataErrorCard />;
+  const preview = mode === 'preview';
   const now = new Date();
 
-  const policyMember = new Map(policies.map((p) => [p.id, p.member_name]));
+  // 유지 중인 계약과 그 담보만 센다. 만기·해지 이력까지 더하면 숫자가 부풀어
+  // "내 계약이 이렇게 많을 리가" 하는 오해를 만든다.
+  const activePolicies = policies.filter((p) => p.status === '유지');
+  const activeByMember = new Map<string, number>();
+  for (const p of activePolicies) {
+    activeByMember.set(p.member_name, (activeByMember.get(p.member_name) ?? 0) + 1);
+  }
+  const activePolicyMember = new Map(activePolicies.map((p) => [p.id, p.member_name]));
   const coverageCount = new Map<string, number>();
   for (const c of coverages) {
-    const name = policyMember.get(c.policy_id);
+    const name = activePolicyMember.get(c.policy_id);
     if (!name) continue;
     coverageCount.set(name, (coverageCount.get(name) ?? 0) + 1);
   }
@@ -44,11 +48,16 @@ export default async function FamilyPage() {
     gapsByMember.set(cell.member_id, list);
   }
 
-  const totalCoverages = coverages.length;
+  const totalActiveCoverages = [...coverageCount.values()].reduce((a, b) => a + b, 0);
 
   return (
     <>
-      <SectionTitle meta={`${members.length}명 · 담보 ${totalCoverages}개`}>우리 가족</SectionTitle>
+      <SectionTitle meta={`${members.length}명 · 유지 담보 ${totalActiveCoverages}개`}>
+        {preview ? '예시 가구' : '우리 가족'}
+      </SectionTitle>
+
+      {preview ? <PreviewNotice>연결하면 우리 가족이 여기에 들어옵니다</PreviewNotice> : null}
+      <DataSourceNotice environment={dataEnvironment} />
 
       {members.map((m) => {
         const days = daysAgo(m.last_synced_at, now);
@@ -70,7 +79,8 @@ export default async function FamilyPage() {
                 </span>
                 <br />
                 <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
-                  계약 {Number(m.last_policy_count ?? 0)}건 · 담보 {coverageCount.get(m.display_name) ?? 0}개
+                  유지 {activeByMember.get(m.display_name) ?? 0}건 · 담보{' '}
+                  {coverageCount.get(m.display_name) ?? 0}개
                 </span>
               </span>
               <Pill tone={m.last_run_status === 'failed' ? 'bad' : stale ? 'warn' : 'ok'}>
@@ -103,19 +113,26 @@ export default async function FamilyPage() {
 
             {stale ? (
               <>
+                <div className="flex items-start gap-2.5">
+                  <span className="flex-none">
+                    <Beoni pose="clock" height={40} />
+                  </span>
                 <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
                   마지막 조회가 반년을 넘었습니다. 그 사이 새로 가입한 보험이 있다면 반영되지
                   않습니다.
                 </p>
-                <button type="button" className="btn btn-soft" disabled>
+                </div>
+                {/* 연결 화면이 생겼으니 여기서 바로 보낸다. 안내만 하고 길이 없으면 막다른 길이다. */}
+                <Link href="/connect" className="btn btn-soft">
                   다시 동기화
-                  <span className="text-[14px] font-medium">(인증 화면 준비 중)</span>
-                </button>
+                </Link>
               </>
             ) : null}
           </Card>
         );
       })}
+
+      {preview ? <ConnectCard cta="내 보험부터 연결하기" /> : null}
 
       <Link href="/family/add" className="card card-tap flex items-center gap-3" style={{ borderStyle: 'dashed' }}>
         <span className="avatar avatar-ghost">

@@ -78,21 +78,46 @@ export function shortWon(won: number): string {
   return won.toLocaleString('ko-KR');
 }
 
-/** 이름 첫 글자를 딴 아바타. 사진을 받지 않으므로 글자로 구분한다. */
+/**
+ * 구성원 아바타. 사진이 있으면 사진을, 없으면 이름 첫 글자를 보여준다.
+ *
+ * 사진은 `<img>` 로 직접 건다. next/image 를 쓰면 최적화 프록시를 한 번 더 타는데,
+ * 이미 256px 로 줄여 저장한 이미지라 얻을 게 없고 가족만 볼 수 있는 주소를 그쪽에
+ * 흘리게 된다.
+ */
 export function Avatar({
   name,
   variant = 'brand',
   size = 44,
+  src,
 }: {
   name: string;
   variant?: 'brand' | 'muted' | 'ghost';
   size?: number;
+  /** 프로필 사진 주소. null 이면 이니셜로 돌아간다. */
+  src?: string | null;
 }) {
   const cls = variant === 'brand' ? 'avatar' : `avatar avatar-${variant}`;
+  const radius = Math.round(size * 0.34);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={`${name} 프로필 사진`}
+        width={size}
+        height={size}
+        className="flex-none object-cover"
+        style={{ width: size, height: size, borderRadius: radius, boxShadow: 'var(--e1)' }}
+      />
+    );
+  }
+
   return (
     <span
       className={cls}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.34), fontSize: Math.round(size * 0.36) }}
+      style={{ width: size, height: size, borderRadius: radius, fontSize: Math.round(size * 0.36) }}
       aria-hidden="true"
     >
       {name.slice(0, 1)}
@@ -181,4 +206,52 @@ export const ICONS = {
   ),
   send: <path d="m3 11 18-8-8 18-2-8z" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  bell: (
+    <>
+      <path d="M18 15V10a6 6 0 1 0-12 0v5l-1.5 2.5h15z" />
+      <path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M20 13.5A3.5 3.5 0 0 1 16.5 17H9l-4 3v-3.6A3.5 3.5 0 0 1 4 13V7.5A3.5 3.5 0 0 1 7.5 4h9A3.5 3.5 0 0 1 20 7.5z" />
+    </>
+  ),
+  gear: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3.2 13 5a7.6 7.6 0 0 1 2 .8l1.9-.7 1.6 2.8-1.5 1.3a7.6 7.6 0 0 1 0 2.1l1.5 1.3-1.6 2.8-1.9-.7a7.6 7.6 0 0 1-2 .8l-1 1.8h-3.2l-1-1.8a7.6 7.6 0 0 1-2-.8l-1.9.7-1.6-2.8 1.5-1.3a7.6 7.6 0 0 1 0-2.1L3.3 7.9 4.9 5.1l1.9.7a7.6 7.6 0 0 1 2-.8l1-1.8z" />
+    </>
+  ),
+  donut: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3.4" />
+      <path d="M12 3.5v5" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M6 3h12v18l-3-1.6-3 1.6-3-1.6L6 21z" />
+      <path d="M9.5 8.5h5M9.5 12.5h5" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5.3l3.2 1.9" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" />
+      <path d="M5 19.5A1.5 1.5 0 0 1 6.5 21H19" />
+    </>
+  ),
+  doc: (
+    <>
+      <path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z" />
+      <path d="M13.5 3v5.5H19" />
+    </>
+  ),
 } as const;

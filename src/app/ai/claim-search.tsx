@@ -6,7 +6,10 @@ import {
   type CoverageCandidate,
   type MatchResult,
 } from '@/lib/domain/incident-match';
+import { Beoni } from '../_components/brand';
+import type { ClauseCitation } from '@/lib/repo/terms';
 import { Card, Disclaimer, Icon, ICONS, Pill, shortWon } from '../_components/ui';
+import { ConnectCard, PreviewNotice } from '../_components/connect';
 
 const EXAMPLES = [
   { chip: '아이가 물건 파손', q: '아이가 친구 안경을 깨뜨렸어요' },
@@ -20,9 +23,15 @@ const EXAMPLES = [
 export function ClaimSearch({
   candidates,
   initialQuery = '',
+  preview = false,
+  citations = {},
 }: {
   candidates: CoverageCandidate[];
   initialQuery?: string;
+  /** 연결 전 예시 담보로 돌고 있는지. 화면에 반드시 밝힌다. */
+  preview?: boolean;
+  /** 사고 유형별로 내 약관에서 찾은 조항. 없으면 규칙 파일의 예시 문구를 쓴다. */
+  citations?: Partial<Record<string, ClauseCitation>>;
 }) {
   const [text, setText] = useState(initialQuery);
   const [result, setResult] = useState<MatchResult | null>(
@@ -93,17 +102,30 @@ export function ClaimSearch({
         ))}
       </div>
 
+      {preview ? <PreviewNotice>예시 가구의 담보 {candidates.length}개로 진단합니다</PreviewNotice> : null}
+
       {result === null ? (
         <Card flat>
           <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            보유하신 담보 <b className="font-semibold">{candidates.length}개</b>를 대상으로 찾습니다.
-            누가 다쳤는지, 무엇이 망가졌는지, 언제 어디서 일어났는지를 적으면 더 정확합니다.
+            {preview ? '예시 가구의' : '보유하신'} 담보{' '}
+            <b className="font-semibold">{candidates.length}개</b>를 대상으로 찾습니다. 누가 다쳤는지,
+            무엇이 망가졌는지, 언제 어디서 일어났는지를 적으면 더 정확합니다.
           </p>
         </Card>
       ) : null}
 
       {result?.kind === 'unknown' ? <UnknownResult /> : null}
-      {result?.kind === 'matched' ? <MatchedResult result={result} /> : null}
+      {result?.kind === 'matched' ? (
+        <MatchedResult result={result} citation={citations[result.rule.id] ?? null} />
+      ) : null}
+
+      {/* 결과를 다 본 뒤에 연결을 권한다. 앞에 세우지 않는다. */}
+      {preview && result !== null ? (
+        <ConnectCard
+          title="내 보험으로도 확인해보세요"
+          lines={['방금 본 진단을 우리 가족의 실제 담보로 돌립니다', '가입한 보험을 몰라서 놓치는 일이 없게']}
+        />
+      ) : null}
     </>
   );
 }
@@ -140,60 +162,107 @@ function UnknownResult() {
   );
 }
 
-function MatchedResult({ result }: { result: Extract<MatchResult, { kind: 'matched' }> }) {
+/** 담보 금액 합계. 확정 지급액이 아니라 "약관상 한도의 합" 이라는 점을 화면이 밝힌다. */
+function sumAmount(coverages: Extract<MatchResult, { kind: 'matched' }>['coverages']): number | null {
+  let total = 0;
+  let known = 0;
+  for (const c of coverages) {
+    const n = c.amount === null ? NaN : Number(c.amount);
+    if (Number.isFinite(n)) {
+      total += n;
+      known += 1;
+    }
+  }
+  return known > 0 ? total : null;
+}
+
+function MatchedResult({
+  result,
+  citation,
+}: {
+  result: Extract<MatchResult, { kind: 'matched' }>;
+  citation: ClauseCitation | null;
+}) {
   const { rule, coverages, noCoverage } = result;
+  const total = sumAmount(coverages);
+
+  // 담보를 못 찾았을 때는 히어로를 쓰지 않는다. 화려한 판 위에 나쁜 소식을 얹으면
+  // 무엇을 읽어야 할지 알 수 없다.
+  if (noCoverage) {
+    return (
+      <>
+        <Card style={{ background: 'var(--warn-soft)', borderColor: 'var(--warn-line)' }}>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex-none">
+              <Beoni pose="sorry" height={34} />
+            </span>
+            <h2 className="text-[17px] font-bold" style={{ color: 'var(--warn)' }}>
+              해당 담보를 보유하고 있지 않아요
+            </h2>
+          </div>
+          <p className="text-[15px] leading-relaxed">
+            {rule.label} 사고로 판단했지만, 우리집 보장내역에 해당 담보가 없습니다. 아래 약관 조항은
+            이 사고에 통상 적용되는 내용이니 다른 가족 계약이나 상대방 보험을 확인해보세요.
+          </p>
+        </Card>
+        <ClauseCard citation={citation} fallback={rule.quote} />
+        <ClaimGuide rule={rule} />
+      </>
+    );
+  }
 
   return (
     <>
-      <Card
-        style={
-          noCoverage
-            ? { background: 'var(--warn-soft)', borderColor: 'var(--warn-line)' }
-            : { background: 'var(--brand-soft)', borderColor: 'var(--brand-line)' }
-        }
-      >
-        <div className="mb-1 flex items-center gap-2">
-          <span className="flex-none" style={{ color: noCoverage ? 'var(--warn)' : 'var(--brand-ink)' }}>
-            <Icon path={noCoverage ? ICONS.alert : ICONS.check} size={21} />
+      {/* 히어로 — 이 화면의 결론을 한 판에 담는다. */}
+      <div className="aihero">
+        <div className="flex items-center gap-2.5">
+          <Beoni pose="found" height={44} />
+          <span className="min-w-0 flex-1">
+            <b className="block text-[13px] font-bold tracking-[0.08em]" style={{ color: 'rgba(255,255,255,.8)' }}>
+              놓칠 뻔했어요
+            </b>
+            <b className="block text-[19px] leading-snug font-bold">{rule.headline}</b>
           </span>
-          <h2
-            className="text-[17px] font-bold"
-            style={{ color: noCoverage ? 'var(--warn)' : 'var(--brand-ink)' }}
-          >
-            {noCoverage ? '해당 담보를 보유하고 있지 않아요' : rule.headline}
-          </h2>
         </div>
-        <p className="text-[15px] leading-relaxed">
-          {noCoverage
-            ? `${rule.label} 사고로 판단했지만, 우리집 보장내역에 해당 담보가 없습니다. 아래 약관 조항은 이 사고에 통상 적용되는 내용이니 다른 가족 계약이나 상대방 보험을 확인해보세요.`
-            : rule.lead}
-        </p>
-      </Card>
+        <p className="lead mt-2 text-[15px] leading-relaxed">{rule.lead}</p>
 
-      {coverages.length > 0 ? (
-        <Card className="flex flex-col gap-3">
-          <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
-            적용 가능한 담보 {coverages.length}건
+        <div className="slab">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
+              적용 가능한 담보
+            </span>
+            <b className="grad-num tnum text-[24px] leading-tight font-extrabold">
+              {coverages.length}건
+            </b>
           </span>
-          {coverages.map((c, i) => (
-            <div
-              key={`${c.policyId}-${c.name}-${i}`}
-              className="rounded-[11px] p-3"
-              style={{ background: 'var(--brand-soft)' }}
-            >
+          <span className="w-px self-stretch" style={{ background: 'var(--line)' }} />
+          <span className="min-w-0 flex-1 text-right">
+            <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
+              약관상 한도 합계
+            </span>
+            <b className="grad-num tnum text-[24px] leading-tight font-extrabold">
+              {total === null ? '—' : `${shortWon(total)}원`}
+            </b>
+          </span>
+        </div>
+        <p className="mt-2 text-[13px]" style={{ color: 'rgba(255,255,255,.78)' }}>
+          한도의 합계일 뿐, 실제로 받는 금액이 아닙니다.
+        </p>
+      </div>
+
+      {/* 담보 타일 — 그라디언트 테두리로 하나씩 세운다. */}
+      <div className="flex flex-col gap-2.5">
+        {coverages.map((c, i) => (
+          <div key={`${c.policyId}-${c.name}-${i}`} className="glowcard">
+            <div className="inner">
               <div className="flex items-start justify-between gap-3">
                 <b className="text-[16px] leading-snug" style={{ color: 'var(--brand-ink)' }}>
                   {c.name}
                 </b>
-                <span className="tnum flex-none text-[16px] font-bold">
-                  {c.amount === null || !Number.isFinite(Number(c.amount)) ? (
-                    <span style={{ color: 'var(--ink-3)' }}>—</span>
-                  ) : (
-                    <>
-                      {shortWon(Number(c.amount))}
-                      <span className="ml-0.5 text-[14px] font-medium">원</span>
-                    </>
-                  )}
+                <span className="grad-num tnum flex-none text-[19px] font-extrabold">
+                  {c.amount === null || !Number.isFinite(Number(c.amount))
+                    ? '—'
+                    : `${shortWon(Number(c.amount))}원`}
                 </span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -203,21 +272,57 @@ function MatchedResult({ result }: { result: Extract<MatchResult, { kind: 'match
                 </span>
               </div>
             </div>
-          ))}
-          <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            {rule.note}
-          </p>
-        </Card>
-      ) : null}
+          </div>
+        ))}
+      </div>
 
-      <Card>
-        <h2 className="text-[16px] font-semibold">판단 근거 — 약관 원문</h2>
-        <p className="quote mt-2.5">{rule.quote}</p>
-        <p className="mt-2.5 text-[14px]" style={{ color: 'var(--ink-3)' }}>
-          가입하신 상품의 약관 문구는 다를 수 있습니다. 약관 수집이 끝나면 실제 조항으로 대체됩니다.
+      <Card flat>
+        <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          {rule.note}
         </p>
       </Card>
 
+      <ClauseCard citation={citation} fallback={rule.quote} />
+      <ClaimGuide rule={rule} />
+    </>
+  );
+}
+
+/**
+ * 판단 근거. 내 약관에서 찾은 조항이 있으면 그것을 쓰고, 없을 때만 예시 문구를 쓰되
+ * 반드시 예시라고 밝힌다 — 없는 근거를 있는 것처럼 보여주지 않는다.
+ */
+function ClauseCard({ citation, fallback }: { citation: ClauseCitation | null; fallback: string }) {
+  return (
+    <Card>
+      <h2 className="text-[16px] font-semibold">판단 근거 — 약관 원문</h2>
+      <p className="quotecard mt-2.5">{citation ? citation.body : fallback}</p>
+      {citation ? (
+        <span className="quote-src">
+          <Icon path={ICONS.doc} size={15} />
+          {citation.citation}
+        </span>
+      ) : (
+        <p className="mt-2.5 flex items-start gap-2 text-[14px]" style={{ color: 'var(--warn)' }}>
+          <span className="flex-none pt-0.5">
+            <Icon path={ICONS.alert} size={17} />
+          </span>
+          <span>
+            <b className="font-semibold">예시 문구입니다.</b>{' '}
+            <span style={{ color: 'var(--ink-3)' }}>
+              가입하신 상품의 약관을 넣으면 실제 조항으로 바뀝니다.
+            </span>
+          </span>
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/** 서류 → 경로 → 기한 → 면책. 순서를 바꾸지 않는다(AI 답변 형식 고정). */
+function ClaimGuide({ rule }: { rule: Extract<MatchResult, { kind: 'matched' }>['rule'] }) {
+  return (
+    <>
       <Card>
         <h2 className="text-[16px] font-semibold">준비할 서류</h2>
         <ul className="mt-2.5 flex flex-col gap-2">

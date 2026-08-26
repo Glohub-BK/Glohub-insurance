@@ -1,8 +1,8 @@
-import { getCoverageCandidates } from '@/lib/repo/dashboard';
+import { getCandidateView } from '@/lib/repo/view-data';
 import { getCurrentHousehold } from '@/lib/repo/household';
-import type { CoverageCandidate } from '@/lib/domain/incident-match';
+import { getClauseCitations } from '@/lib/repo/terms';
 import { ClaimSearch } from './claim-search';
-import { EmptyHousehold } from '../_components/empty';
+import { DataErrorCard } from '../_components/data-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,27 +11,29 @@ export default async function AiPage({
 }: {
   searchParams: Promise<{ q?: string | string[] }>;
 }) {
-  const household = await getCurrentHousehold();
-  if (!household) return <EmptyHousehold />;
-
   const { q } = await searchParams;
   const initialQuery = Array.isArray(q) ? (q[0] ?? '') : (q ?? '');
 
-  const rows = await getCoverageCandidates(household.id);
+  // 연결 전에도 코칭을 그대로 체험할 수 있어야 한다. 로그인 게이트를 앞에 두지 않는다.
+  const { mode, candidates } = await getCandidateView();
+  if (mode === 'error') return <DataErrorCard />;
 
-  // pg 는 numeric 을 문자열로 준다. 클라이언트로 넘기기 전에 숫자로 맞춘다.
-  const candidates: CoverageCandidate[] = rows.map((r) => ({
-    policyId: r.policyId,
-    memberName: r.memberName,
-    insurerName: r.insurerName,
-    productName: r.productName,
-    category: r.category,
-    name: r.name,
-    amount: r.amount === null ? null : Number(r.amount),
-    coverageStatus: r.coverageStatus,
-  }));
+  // 내 약관에서 뽑아둔 조항이 있으면 판단 근거로 쓴다. 없거나 DB 가 없으면 빈 객체다 —
+  // 근거가 없다고 화면이 죽으면 안 된다.
+  const household = await getCurrentHousehold().catch(() => null);
+  const citations = household
+    ? await getClauseCitations(household.id).catch(() => ({}))
+    : {};
 
-  // 홈 입력창에서 ?q= 를 달고 들어오면 질의가 바뀔 때마다 새로 마운트시킨다.
-  // effect 로 상태를 되받는 것보다 단순하고, 이전 결과가 잠깐 남는 일도 없다.
-  return <ClaimSearch key={initialQuery} candidates={candidates} initialQuery={initialQuery} />;
+  // 질의가 바뀔 때마다 새로 마운트시킨다. effect 로 상태를 되받는 것보다 단순하고,
+  // 이전 결과가 잠깐 남는 일도 없다.
+  return (
+    <ClaimSearch
+      key={initialQuery}
+      candidates={candidates}
+      initialQuery={initialQuery}
+      preview={mode === 'preview'}
+      citations={citations}
+    />
+  );
 }

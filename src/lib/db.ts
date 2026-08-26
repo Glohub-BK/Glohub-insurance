@@ -77,3 +77,10 @@ export async function withTransaction<T>(
     client.release();
   }
 }
+
+/** 스크립트에서 풀을 닫는다. 열어두면 프로세스가 끝나지 않는다. */
+export async function closePool(): Promise<void> {
+  const pool = globalThis.__insurancePool;
+  globalThis.__insurancePool = undefined;
+  await pool?.end();
+}

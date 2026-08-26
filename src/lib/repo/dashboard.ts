@@ -15,6 +15,8 @@ export type MemberSyncRow = {
   last_policy_count: string | null;
   is_minor: boolean;
   guardian_consent_at: string | null;
+  /** 프로필 사진 갱신 시각. 없으면 사진이 없다는 뜻이고 화면은 이니셜로 돌아간다. */
+  avatar_updated_at: string | null;
 };
 
 export type MatrixCell = {

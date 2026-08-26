@@ -1,0 +1,828 @@
+<title>놓칠뻔 UI 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+
+<style>
+  /* ASSETS */
+
+  /* 이 페이지는 앱의 라이트 화면 시안이므로 의도적으로 라이트 단일 테마다.
+     바탕과 색은 전부 명시해 어느 호스트 테마 위에서도 같게 보이게 한다. */
+  :root {
+    --paper: #f5eff2;
+    --card: #ffffff;
+    --sub: #faf5f7;
+    --ink: #1c1218;
+    --ink-2: #5e4e56;
+    --ink-3: #8e7c85;
+    --line: #f0e5ea;
+    --line-2: #e0cdd6;
+    --brand: #a32a5e;
+    --brand-ink: #7e1e48;
+    --brand-soft: #fbebf2;
+    --brand-grad: linear-gradient(148deg, #b93a70 0%, #8c1f4e 100%);
+    --alert: #b03a16;
+    --alert-soft: #fdefe8;
+    --warn: #7a5a00;
+    --warn-soft: #fbf4df;
+    --ok-soft: #fbebf2;
+    --shadow-rgb: 60, 12, 36;
+    --e1: 0 1px 1px rgba(var(--shadow-rgb), .05), 0 4px 8px -3px rgba(var(--shadow-rgb), .1), 0 12px 22px -12px rgba(var(--shadow-rgb), .18), inset 0 1px 0 rgba(255, 255, 255, .9);
+    --e2: 0 2px 3px -1px rgba(var(--shadow-rgb), .08), 0 8px 16px -6px rgba(var(--shadow-rgb), .14), 0 24px 40px -20px rgba(var(--shadow-rgb), .22), inset 0 1px 0 rgba(255, 255, 255, .9);
+    --sans: "Pretendard", "IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 52px 20px 90px; display: flex; flex-direction: column; gap: 64px; }
+  section { display: flex; flex-direction: column; gap: 18px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--brand); }
+  h1 { margin: 0; font-size: clamp(28px, 5.5vw, 42px); line-height: 1.22; letter-spacing: -.03em; font-weight: 700; text-wrap: balance; }
+  h2 { margin: 0; font-size: clamp(20px, 3.2vw, 26px); letter-spacing: -.02em; font-weight: 700; text-wrap: balance; }
+  p { margin: 0; color: var(--ink-2); max-width: 66ch; }
+  .rule { height: 1px; background: var(--line-2); border: 0; margin: 0; opacity: .6; }
+  .note { font-size: 14px; color: var(--ink-3); }
+
+  .frames { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  figure.frame { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  figcaption { font-size: 13.5px; color: var(--ink-3); line-height: 1.55; max-width: 330px; }
+  figcaption b { display: block; font-size: 14.5px; color: var(--ink); font-weight: 600; }
+  figcaption strong { font-weight: 700; color: var(--ink); }
+
+  /* ── 목업 공통 부품 ─────────────────────────────── */
+  .phone { width: 330px; background: var(--sub); border: 1px solid var(--line-2); border-radius: 26px; box-shadow: var(--e2); overflow: hidden; position: relative; }
+  .scr { padding: 14px 14px 84px; display: flex; flex-direction: column; gap: 11px; font-size: 12.5px; }
+  .m-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--e1); padding: 12px; }
+  .m-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 4px; }
+  .m-logo { height: 24px; }
+  .pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; background: var(--sub); border: 1px solid var(--line); color: var(--ink-2); }
+  .pill.ok { background: var(--brand-soft); border-color: #f0c2d5; color: var(--brand-ink); }
+  .pill.warn { background: var(--warn-soft); border-color: #e9dbb2; color: var(--warn); }
+  .pill.bad { background: var(--alert-soft); border-color: #f2d0bf; color: var(--alert); }
+  .btn-p { display: block; text-align: center; background: var(--brand-grad); color: #fff; font-weight: 700; border-radius: 12px; padding: 9px; font-size: 12.5px; box-shadow: var(--e1); }
+  .hero { background: var(--brand-grad); border-radius: 16px; color: #fff; padding: 14px; box-shadow: var(--e2); }
+  .hero .in { margin-top: 8px; background: #fff; border-radius: 10px; padding: 8px 10px; color: var(--ink-3); font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; }
+  .hero .go { width: 22px; height: 22px; border-radius: 7px; background: var(--brand-grad); color: #fff; display: grid; place-items: center; font-size: 12px; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 52px; border-radius: 18px; background: rgba(255,255,255,.85); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: var(--e2); display: flex; align-items: center; justify-content: space-around; font-size: 10px; color: var(--ink-3); }
+  .dock .fab { width: 40px; height: 40px; border-radius: 999px; background: var(--brand-grad); color: #fff; display: grid; place-items: center; margin-top: -18px; box-shadow: var(--e2); font-size: 15px; }
+  .avatar { width: 26px; height: 26px; border-radius: 9px; background: var(--brand-grad); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; box-shadow: var(--e1); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .grow { flex: 1; min-width: 0; }
+  .amount { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-3); font-size: 11px; }
+  .m-title { font-weight: 700; font-size: 13px; }
+  .mascot { display: block; }
+
+  /* ── 데스크톱 목업 ─────────────────────────────── */
+  .deskwrap { width: 100%; overflow-x: auto; padding-bottom: 6px; }
+  .desk { width: 980px; background: var(--sub); border: 1px solid var(--line-2); border-radius: 20px; box-shadow: var(--e2); display: flex; overflow: hidden; min-height: 520px; }
+  .rail { width: 196px; flex: none; background: var(--card); border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .rail .nav { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 11px; font-size: 13px; color: var(--ink-2); }
+  .rail .nav.on { background: var(--brand-soft); color: var(--brand-ink); font-weight: 700; box-shadow: var(--e1); }
+  .rail .sp { flex: 1; }
+  .rail .acct { border-top: 1px solid var(--line); padding-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .main { flex: 1; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; font-size: 12.5px; }
+  .cols { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; align-items: start; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  table.mx { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+  table.mx th, table.mx td { padding: 6px 8px; text-align: center; border-top: 1px solid var(--line); }
+  table.mx th[scope=row] { text-align: left; font-weight: 600; white-space: nowrap; }
+  .cell { display: block; border-radius: 7px; padding: 3px 4px; font-weight: 700; font-size: 11px; background: var(--brand-soft); color: var(--brand-ink); }
+  .cell.gap { background: var(--alert-soft); color: var(--alert); }
+  .cell.none { background: none; color: var(--ink-3); font-weight: 400; }
+
+  /* ── 로딩 데모 ─────────────────────────────────── */
+  @keyframes sway { 0%,100% { transform: translateX(-16px) rotate(-2.5deg); } 50% { transform: translateX(16px) rotate(2.5deg); } }
+  @keyframes swapA { 0%,42% { opacity: 1; } 50%,92% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes swapB { 0%,42% { opacity: 0; } 50%,92% { opacity: 1; } 100% { opacity: 0; } }
+  .sway { animation: sway 2.6s ease-in-out infinite; }
+  .swap { position: relative; width: 96px; height: 98px; }
+  .swap img { position: absolute; inset: 0; margin: auto; }
+  .swap img:first-child { animation: swapA 5.2s ease-in-out infinite; }
+  .swap img:last-child { animation: swapB 5.2s ease-in-out infinite; }
+  @keyframes dots { 0%,20% { opacity: .2; } 50% { opacity: 1; } 80%,100% { opacity: .2; } }
+  .d { animation: dots 1.2s ease-in-out infinite; } .d:nth-child(2) { animation-delay: .15s; } .d:nth-child(3) { animation-delay: .3s; }
+  .bubble { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; box-shadow: var(--e1); font-size: 12.5px; color: var(--ink-2); text-align: center; }
+  .bubble::before { content: ''; position: absolute; top: -6px; left: 50%; width: 10px; height: 10px; margin-left: -5px; background: var(--card); border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg); }
+  @media (prefers-reduced-motion: reduce) { .sway, .swap img, .d { animation: none; } .swap img:last-child { display: none; } }
+
+  .dec { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--e1); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .dec b.t { font-size: 16px; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--e1); background: var(--card); }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: 14px; }
+  .tbl th, .tbl td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl th { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+
+  /* v2 — 로그인 시트 · AI 플래그십 · 또래 차트 */
+  .sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; background: var(--card); border-radius: 18px 18px 22px 22px; box-shadow: 0 -8px 30px rgba(60,12,36,.18); padding: 16px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .dim { position: absolute; inset: 0; background: rgba(28,18,24,.35); backdrop-filter: blur(2px); }
+  .sbtn { display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; padding: 10px; font-size: 12.5px; font-weight: 700; box-shadow: var(--e1); }
+  .kakao { background: #FEE500; color: #191600; }
+  .naver { background: #03C75A; color: #fff; }
+  .google { background: #fff; color: #3c4043; border: 1px solid var(--line-2); }
+  .grad-num { background: linear-gradient(135deg, #c8517f 0%, #7e1e48 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .glowcard { position: relative; border-radius: 16px; padding: 1.5px; background: linear-gradient(140deg, #e08bb0, #a32a5e 45%, #5c1435); box-shadow: 0 10px 26px -10px rgba(163,42,94,.45), var(--e1); }
+  .glowcard > .inner { background: var(--card); border-radius: 14.5px; padding: 11px; }
+  .quotecard { border-left: 4px solid; border-image: linear-gradient(180deg,#c8517f,#5c1435) 1; background: linear-gradient(160deg,#fdf3f8,#fbebf2); border-radius: 0 12px 12px 0; padding: 10px 12px; font-size: 11.5px; color: var(--ink-2); }
+  .src { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; font-size: 10.5px; font-weight: 700; color: var(--brand-ink); background: #fff; border: 1px solid #f0c2d5; border-radius: 999px; padding: 3px 9px; box-shadow: var(--e1); }
+  .bars { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 4px 6px 0; }
+  .bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; color: var(--ink-3); }
+  .bar i { display: block; width: 100%; border-radius: 8px 8px 4px 4px; background: linear-gradient(180deg, #e6a9c4, #b5688e); box-shadow: var(--e1); }
+  .bar.me i { background: linear-gradient(180deg, #c8517f, #7e1e48); box-shadow: 0 8px 18px -6px rgba(163,42,94,.55), var(--e1); }
+  .bar.q i { background: repeating-linear-gradient(135deg, #efdfe7 0 6px, #e5cfdb 6px 12px); position: relative; }
+  .lock { position: absolute; inset: 0; display: grid; place-items: center; font-size: 16px; }
+</style>
+
+<div class="wrap">
+
+  <header style="display:flex;flex-direction:column;gap:18px">
+    <span class="eyebrow">UI Proposal · v3 — 내 정보 · 담보 여력</span>
+    <h1>같은 부품, 두 개의 무대<br>— 놓칠뻔 반응형·인증 시안</h1>
+    <p>카드·뻐니·플럼·3D 그림자는 그대로 두고 <b>배치 컨테이너만</b> 화면 폭에 따라 바꿉니다.
+    모바일은 지금의 세로 스택 + 플로팅 탭바를 유지하고, 1024px 이상에서 탭바가 좌측 레일로 승격됩니다.
+    금액·계약 수는 전부 예시값입니다. <b>v2:</b> 조회=로그인 통합(카카오·네이버·구글), 한국신용정보원 공식 명칭,
+통일 규격 통계 타일, AI 결과 플래그십 카드, 로그인 없는 보험 상식 섹션과 또래 비교 차트.
+<b>v3:</b> 내 정보(굿리치 골격 + 프로필 사진), 궁금증 TOP 5 메뉴, 담보 여력 도넛, 보험금 받은 내역과 「놓칠뻔」 탐지.</p>
+  </header>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">01 — Mobile · 조회 = 로그인</span>
+    <h2>조회하려는 손이 곧 가입 의사다</h2>
+    <p>체험은 로그인 없이, <b>내 보험을 실제로 조회하려는 순간</b>에만 소셜 로그인을 요구합니다.
+    로그인 뒤 곧바로 한국신용정보원 연결로 이어지고, 이 계정이 보관·가족 공유의 기준이 됩니다.
+    보험 상식 등 정보 섹션은 로그인 없이 계속 열려 있습니다.</p>
+
+    <div class="frames">
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd">
+            <img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔">
+            <span class="pill">시작하기</span>
+          </div>
+          <div class="hero">
+            <b style="font-size:14px">무슨 일이 있었나요?</b>
+            <div style="font-size:11px;opacity:.9;margin-top:2px">있었던 일을 그대로 적어주세요</div>
+            <div class="in">예: 아이가 친구 안경을 깨뜨렸어요 <span class="go">→</span></div>
+          </div>
+          <div class="m-card" style="background:var(--warn-soft);border-color:#e9dbb2">
+            <span style="color:var(--warn);font-weight:700;font-size:11.5px">예시 화면</span>
+            <span class="muted"> 아래는 예시 가구입니다</span>
+          </div>
+          <div class="m-card">
+            <span class="muted">우리집 월 보험료</span>
+            <div class="amount" style="filter:blur(5px);color:var(--ink-3)">312,400원</div>
+            <a class="btn-p" style="margin-top:8px">내 보험 조회하기</a>
+          </div>
+          <div class="dock"><span>홈</span><span>보장</span><span class="fab">⌕</span><span>상식</span><span>나</span></div>
+        </div></div>
+        <figcaption><b>① 게스트</b>전 기능을 예시로 체험. 「내 보험 조회하기」를 누르는 순간 ②의 로그인 시트가 뜬다.</figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr" style="min-height:430px">
+          <div class="m-hd"><img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔"><span class="pill">시작하기</span></div>
+          <div class="hero"><b style="font-size:14px">무슨 일이 있었나요?</b><div class="in">예: 아이가 친구 안경을 깨뜨렸어요 <span class="go">→</span></div></div>
+          <div class="m-card"><span class="muted">우리집 월 보험료</span><div class="amount" style="filter:blur(5px);color:var(--ink-3)">312,400원</div></div>
+        </div>
+        <div class="dim"></div>
+        <div class="sheet">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg66eh6rKo7KSYICjssqsg7ZmU66m0KSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KICA8ZyBzdHJva2U9IiNkNTlmYjciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik01NCAxNThDMzYgMTY0IDMwIDE3NiA0NCAxODYiLz4KICAgIDxwYXRoIGQ9Ik0xNjYgMTU4QzE4NCAxNjQgMTkwIDE3NiAxNzYgMTg2Ii8+CiAgPC9nPgoKICA8ZyBmaWx0ZXI9InVybCgjYi1zaGFkb3cpIj4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0idXJsKCNiLWJvZHkpIi8+CiAgICA8ZyBjbGlwLXBhdGg9InVybCgjYi1jbGlwKSI+CiAgICAgIDxlbGxpcHNlIGN4PSI4MCIgY3k9Ijc0IiByeD0iMzQiIHJ5PSIyNiIgZmlsbD0idXJsKCNiLXNwZWMpIiBmaWx0ZXI9InVybCgjYi1zb2Z0KSIvPgogICAgICA8ZWxsaXBzZSBjeD0iMTMwIiBjeT0iMTg4IiByeD0iODAiIHJ5PSI0NiIgZmlsbD0iI2U5YmNjZiIgb3BhY2l0eT0iLjUiLz4KICAgIDwvZz4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTMyYTVlIiBzdHJva2Utb3BhY2l0eT0iLjM1IiBzdHJva2Utd2lkdGg9IjIuNSIvPgogIDwvZz4KCiAgPGVsbGlwc2UgY3g9IjcyIiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGVsbGlwc2UgY3g9IjE0OCIgY3k9IjE1MiIgcng9IjEzIiByeT0iOCIgZmlsbD0idXJsKCNiLWNoZWVrKSIvPgogIDwhLS0g7Iud7J2A65WAOiDsnbQg7LqQ66at7YSw7J2YIOygleyytOuLpC4g7ZWt7IOBIOyZvOyqvSDqtIDsnpDrhoDsnbTsl5DshJwg7ZWY64KY66eMIO2dkOuluOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzggOTYpIHNjYWxlKC40MikiPgogICAgPHBhdGggZD0iTTQwIDBDNDAgMCA3NiA0MiA3NiA2NkEzNiAzNiAwIDAgMSA0IDY2QzQgNDIgNDAgMCA0MCAwWiIgZmlsbD0idXJsKCNiLWRyb3ApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMjciIGN5PSI1MiIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iLjU1Ii8+CiAgPC9nPgogIDwhLS0g64iIOiDsnITroZwg7IK07KedIOy5mOy8nOucrCDsnpDsi6DqsJAuIO2dsCDsoJDsnYQg7YGs6rKMIOuEo+yWtCDrmJDroLftlZjqsowg66eM65Og64ukLiAtLT4KICA8ZWxsaXBzZSBjeD0iODgiIGN5PSIxMjgiIHJ4PSIxMSIgcnk9IjEyIiBmaWxsPSIjM2MwYzI0Ii8+CiAgPGVsbGlwc2UgY3g9IjEzMiIgY3k9IjEyOCIgcng9IjExIiByeT0iMTIiIGZpbGw9IiMzYzBjMjQiLz4KICA8Y2lyY2xlIGN4PSI5MiIgY3k9IjEyMyIgcj0iNC4yIiBmaWxsPSIjZmZmZmZmIi8+CiAgPGNpcmNsZSBjeD0iMTM2IiBjeT0iMTIzIiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8cGF0aCBkPSJNNzAgMTA2cTE2LTEyIDMyLTQiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNTAgMTA2cS0xNi0xMi0zMi00IiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS1vcGFjaXR5PSIuNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNOTAgMTU2cTIwIDE4IDQwIDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8IS0tIOuwmOynneyehDog7J6Q7Iug6rCQ7J2YIOyLoO2YuC4g65WA67Cp7Jq4IOuwmOuMgO2OuOyXkCDrkazshJwg65GY7J20IOqyuey5mOyngCDslYrripTri6QuIC0tPgogIDxwYXRoIGQ9Ik0xODIgNzhsNCAxMSAxMSA0LTExIDQtNCAxMS00LTExLTExLTQgMTEtNHoiIGZpbGw9IiNhMzJhNWUiIG9wYWNpdHk9Ii44NSIvPgoKPC9zdmc+Cg==" width="52" alt="" style="margin:0 auto">
+          <b style="font-size:14px;text-align:center">3초 만에 시작하기</b>
+          <span class="muted" style="text-align:center;margin-top:-4px">조회한 보험을 안전하게 보관하고 가족과 함께 봅니다</span>
+          <span class="sbtn kakao">카카오로 계속하기</span>
+          <span class="sbtn naver">네이버로 계속하기</span>
+          <span class="sbtn google">Google로 계속하기</span>
+          <span class="muted" style="text-align:center;font-size:10px">로그인하면 곧바로 한국신용정보원 연결로 이어집니다</span>
+        </div>
+        </div>
+        <figcaption><b>② 소셜 로그인 시트</b>카카오·네이버·구글. 여기서만 로그인을 요구한다 — 조회 의사가 곧 가입 의사다.</figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔"><span class="avatar">강</span></div>
+          <div class="hero"><b style="font-size:14px">무슨 일이 있었나요?</b><div class="in">예: 아이가 친구 안경을 깨뜨렸어요 <span class="go">→</span></div></div>
+          <div class="m-card">
+            <span class="muted">우리집 월 보험료</span>
+            <div class="amount">312,400<span style="font-size:13px">원</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;text-align:center">
+              <span style="background:var(--sub);border:1px solid var(--line);border-radius:9px;padding:6px 2px"><b style="font-size:14px">21</b><span class="muted" style="display:block">전체 계약</span></span>
+              <span style="background:var(--brand-soft);border:1px solid #f0c2d5;border-radius:9px;padding:6px 2px"><b style="font-size:14px;color:var(--brand-ink)">8</b><span class="muted" style="display:block">유지 중</span></span>
+              <span style="background:var(--sub);border:1px solid var(--line);border-radius:9px;padding:6px 2px"><b style="font-size:14px">13</b><span class="muted" style="display:block">만기·해지</span></span>
+            </div>
+          </div>
+          <div class="m-card">
+            <div class="row"><b class="m-title grow">우리 가족</b><span class="muted">전체 보기</span></div>
+            <div class="row" style="margin-top:8px"><span class="avatar">강</span><span class="grow"><b style="font-size:12px">본인</b><div class="muted">유지 8건 · 담보 96개</div></span><span class="pill ok">오늘</span></div>
+            <div class="row" style="margin-top:6px"><span class="avatar" style="background:var(--sub);color:var(--ink-3);border:1px dashed var(--line-2)">+</span><span class="grow"><b style="font-size:12px">가족 초대</b><div class="muted">카카오톡으로 초대장 보내기</div></span></div>
+          </div>
+          <div class="dock"><span>홈</span><span>보장</span><span class="fab">⌕</span><span>상식</span><span>나</span></div>
+        </div></div>
+        <figcaption><b>③ 로그인 + 연결됨</b>통계는 같은 규격의 타일 3칸 — 알약은 폭이 제각각이라 숫자 비교가 안 된다. 가족 초대는 카카오톡 링크.</figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">02 — Desktop ≥ 1024px</span>
+    <h2>탭바가 레일로 승격된다</h2>
+    <p>하단 탭 5개가 그대로 좌측 레일이 됩니다. 새 메뉴를 만들지 않으므로 모바일과 머릿속 지도가 같습니다.
+    본문은 홈에서 2단이 됩니다 — 왼쪽은 "행동"(질문·경고), 오른쪽은 "현황"(보험료·가족).</p>
+
+    <div class="deskwrap"><div class="desk">
+      <div class="rail">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔" style="height:26px;margin:2px 6px 14px">
+        <span class="nav on">🏠 홈</span>
+        <span class="nav">🗺 보장</span>
+        <span class="nav">⌕ AI 청구</span>
+        <span class="nav">👪 가족</span>
+        <span class="nav">👤 나</span>
+        <span class="sp"></span>
+        <span class="acct"><span class="avatar">강</span><span class="grow"><b style="font-size:12px">강**</b><div class="muted">연결됨 · 오늘 동기화</div></span></span>
+      </div>
+      <div class="main">
+        <div class="cols">
+          <div class="stack">
+            <div class="hero">
+              <b style="font-size:16px">무슨 일이 있었나요?</b>
+              <div style="font-size:12px;opacity:.9;margin-top:2px">있었던 일을 그대로 적어주세요. 청구할 담보를 찾아드립니다.</div>
+              <div class="in">예: 아이가 친구 안경을 깨뜨렸어요 <span class="go">→</span></div>
+            </div>
+            <div class="m-card" style="background:var(--alert-soft);border-color:#f2d0bf">
+              <div class="row">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg66q7IOywvuyVmOyWtOyalCAo64u067O0IOyXhuydjCkiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiLWJvZHkiIHgxPSIyNCUiIHkxPSI2JSIgeDI9Ijc2JSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIuNTUiIHN0b3AtY29sb3I9IiNmZGVlZjQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZjRkN2UzIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiLWRyb3AiIHgxPSIyMCUiIHkxPSIwJSIgeDI9IjgwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNjODUxN2YiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIuNSIgc3RvcC1jb2xvcj0iI2EzMmE1ZSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM2ZjE3NDAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImItc3BlYyIgY3g9IjM0JSIgY3k9IjI2JSIgcj0iMzYlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9Ii45NSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1jaGVlayIgY3g9IjUwJSIgY3k9IjUwJSIgcj0iNTAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZjA4YmIwIiBzdG9wLW9wYWNpdHk9Ii41NSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9ImItc2hhZG93IiB4PSItNDAlIiB5PSItMzAlIiB3aWR0aD0iMTgwJSIgaGVpZ2h0PSIxODAlIj4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjEwIiBzdGREZXZpYXRpb249IjEwIiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMTgiLz4KICAgIDwvZmlsdGVyPgogICAgPGZpbHRlciBpZD0iYi1zb2Z0IiB4PSItNTAlIiB5PSItNTAlIiB3aWR0aD0iMjAwJSIgaGVpZ2h0PSIyMDAlIj4KICAgICAgPGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iNCIvPgogICAgPC9maWx0ZXI+CiAgICA8Y2xpcFBhdGggaWQ9ImItY2xpcCI+CiAgICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIvPgogICAgPC9jbGlwUGF0aD4KICA8L2RlZnM+CiAgPGVsbGlwc2UgY3g9IjExMCIgY3k9IjIxMiIgcng9IjU0IiByeT0iOSIgZmlsbD0iIzNjMGMyNCIgb3BhY2l0eT0iLjEzIi8+CiAgPCEtLSDtjJQ6IOuquCDrkqTsl5DshJwg64KY7Jio64ukLiDsiJzshJzqsIAg67CU64CM66m0IOu2meyduCDqsoPsspjrn7wg67O07J2464ukLiAtLT4KICA8ZyBzdHJva2U9IiNkNTlmYjciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik01NiAxNjhDNDQgMTc2IDQwIDE4NCA0MiAxOTAiLz4KICAgIDxwYXRoIGQ9Ik0xNjQgMTY4QzE3NiAxNzYgMTgwIDE4NCAxNzggMTkwIi8+CiAgPC9nPgoKICA8ZyBmaWx0ZXI9InVybCgjYi1zaGFkb3cpIj4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0idXJsKCNiLWJvZHkpIi8+CiAgICA8ZyBjbGlwLXBhdGg9InVybCgjYi1jbGlwKSI+CiAgICAgIDxlbGxpcHNlIGN4PSI4MCIgY3k9Ijc0IiByeD0iMzQiIHJ5PSIyNiIgZmlsbD0idXJsKCNiLXNwZWMpIiBmaWx0ZXI9InVybCgjYi1zb2Z0KSIvPgogICAgICA8ZWxsaXBzZSBjeD0iMTMwIiBjeT0iMTg4IiByeD0iODAiIHJ5PSI0NiIgZmlsbD0iI2U5YmNjZiIgb3BhY2l0eT0iLjUiLz4KICAgIDwvZz4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTMyYTVlIiBzdHJva2Utb3BhY2l0eT0iLjM1IiBzdHJva2Utd2lkdGg9IjIuNSIvPgogIDwvZz4KCiAgPGVsbGlwc2UgY3g9IjcyIiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGVsbGlwc2UgY3g9IjE0OCIgY3k9IjE1MiIgcng9IjEzIiByeT0iOCIgZmlsbD0idXJsKCNiLWNoZWVrKSIvPgogIDwhLS0g7Iud7J2A65WAOiDsnbQg7LqQ66at7YSw7J2YIOygleyytOuLpC4g7ZWt7IOBIOyZvOyqvSDqtIDsnpDrhoDsnbTsl5DshJwg7ZWY64KY66eMIO2dkOuluOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzggOTYpIHNjYWxlKC40MikiPgogICAgPHBhdGggZD0iTTQwIDBDNDAgMCA3NiA0MiA3NiA2NkEzNiAzNiAwIDAgMSA0IDY2QzQgNDIgNDAgMCA0MCAwWiIgZmlsbD0idXJsKCNiLWRyb3ApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMjciIGN5PSI1MiIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iLjU1Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik03NiAxMzBxMTIgMTIgMjQgMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xMjAgMTMwcTEyIDEyIDI0IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNNzIgMTEwcTE0LTggMjgtMiIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utb3BhY2l0eT0iLjU1IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNDggMTEwcS0xNC04LTI4LTIiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii41NSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNOTQgMTY0cTE2LTEyIDMyIDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KCjwvc3ZnPgo=" width="34" alt="" class="mascot">
+                <span class="grow">
+                  <b style="color:var(--alert);font-size:13px">배우자에게 배상책임 담보가 없어요</b>
+                  <div class="muted" style="margin-top:1px">부모 계약의 가족일상생활배상책임으로 보장되는지 확인해보세요</div>
+                </span>
+              </div>
+              <div style="color:var(--alert);font-weight:700;font-size:12px;margin-top:6px">보장 맵에서 공백 12칸 보기 →</div>
+            </div>
+            <div class="m-card">
+              <b class="m-title">최근 진단</b>
+              <div class="muted" style="margin-top:4px">"아이가 친구 안경을 깨뜨렸어요" → 가족일상생활중배상책임 · 1억원</div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="m-card">
+              <span class="muted">우리집 월 보험료</span>
+              <div class="amount">312,400<span style="font-size:13px">원</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;text-align:center">
+                <span style="background:var(--sub);border:1px solid var(--line);border-radius:9px;padding:6px 2px"><b style="font-size:14px">21</b><span class="muted" style="display:block">전체 계약</span></span>
+                <span style="background:var(--brand-soft);border:1px solid #f0c2d5;border-radius:9px;padding:6px 2px"><b style="font-size:14px;color:var(--brand-ink)">8</b><span class="muted" style="display:block">유지 중</span></span>
+                <span style="background:var(--sub);border:1px solid var(--line);border-radius:9px;padding:6px 2px"><b style="font-size:14px">13</b><span class="muted" style="display:block">만기·해지</span></span>
+              </div>
+            </div>
+            <div class="m-card">
+              <b class="m-title">우리 가족</b>
+              <div class="row" style="margin-top:8px"><span class="avatar">강</span><span class="grow"><b style="font-size:12px">본인</b><div class="muted">유지 8건 · 담보 96개</div></span><span class="pill ok">오늘</span></div>
+              <div class="row" style="margin-top:6px"><span class="avatar" style="background:var(--sub);color:var(--ink-3)">배</span><span class="grow"><b style="font-size:12px">배우자</b><div class="muted">유지 4건 · 담보 41개</div></span><span class="pill warn">180일 전</span></div>
+              <div class="row" style="margin-top:6px"><span class="avatar" style="background:var(--sub);color:var(--ink-3)">자</span><span class="grow"><b style="font-size:12px">자녀</b><div class="muted">동기화 안 됨</div></span><span class="pill bad">초대</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">레일 하단의 계정 영역이 모바일 헤더 우측과 같은 역할을 한다 — 상태 3종이 같은 자리에서 갈린다.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">03 — Desktop · 보장 &amp; AI</span>
+    <h2>넓은 화면이 이기는 두 화면</h2>
+    <p>보장 맵은 구성원이 늘수록 옆으로 자라는 표라 데스크톱이 본진입니다.
+    AI 청구는 결과와 근거(약관·서류)를 2단으로 나란히 놓아 스크롤 왕복을 없앱니다.</p>
+
+    <div class="deskwrap"><div class="desk" style="min-height:400px">
+      <div class="rail">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔" style="height:26px;margin:2px 6px 14px">
+        <span class="nav">🏠 홈</span>
+        <span class="nav on">🗺 보장</span>
+        <span class="nav">⌕ AI 청구</span>
+        <span class="nav">👪 가족</span>
+        <span class="nav">👤 나</span>
+      </div>
+      <div class="main">
+        <b style="font-size:15px">보장 맵 <span class="muted" style="font-weight:400">유지 중 계약 기준</span></b>
+        <div class="m-card">
+          <table class="mx">
+            <tr><th></th><th>본인</th><th>배우자</th><th>자녀</th></tr>
+            <tr><th scope="row">사망</th><td><span class="cell">1억</span></td><td><span class="cell">5천만</span></td><td><span class="cell none">—</span></td></tr>
+            <tr><th scope="row">진단비</th><td><span class="cell">3천만</span></td><td><span class="cell">3천만</span></td><td><span class="cell gap">공백</span></td></tr>
+            <tr><th scope="row">실손의료비</th><td><span class="cell">5천만</span></td><td><span class="cell">5천만</span></td><td><span class="cell">5천만</span></td></tr>
+            <tr><th scope="row">배상책임</th><td><span class="cell">1억</span></td><td><span class="cell gap">공백</span></td><td><span class="cell gap">공백</span></td></tr>
+            <tr><th scope="row">운전자·자동차</th><td><span class="cell">가입</span></td><td><span class="cell none">—</span></td><td><span class="cell none">—</span></td></tr>
+          </table>
+        </div>
+        <div class="cols" style="grid-template-columns:1fr 1fr">
+          <div class="m-card">
+            <b class="m-title">실손의료비 <span class="muted" style="font-weight:400">2건</span></b>
+            <div class="muted" style="margin-top:4px">유형 구분은 내보험다보여 공식 5종을 그대로 따른다</div>
+          </div>
+          <div class="m-card">
+            <b class="m-title">정액형 (생명·장기) <span class="muted" style="font-weight:400">5건</span></b>
+            <div class="muted" style="margin-top:4px">유형 안에서는 보험료 큰 순 · 만기는 접힘</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">04 — AI 결과 · 플래그십</span>
+    <h2>진단 결과가 이 앱의 얼굴이다</h2>
+    <p>결과 카드에만 그라디언트·글로우·입체 타일을 몰아 씁니다. 다른 화면이 조용해야 이 화면이 터집니다.
+    금액 숫자는 그라디언트 텍스트, 담보 타일은 빛나는 테두리, 약관 인용은 플럼 리본 — 전부 CI 팔레트 안에서만.</p>
+
+    <div class="frames">
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔"><span class="avatar">강</span></div>
+
+          <div class="hero" style="background:linear-gradient(150deg,#c8517f 0%,#8c1f4e 55%,#5c1435 100%);text-align:center;padding:16px 14px">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7LC+7JWY64ukICjsp4Tri6gg7JmE66OMKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KICA8IS0tIO2MlDog66q4IOuSpOyXkOyEnCDrgpjsmKjri6QuIOyInOyEnOqwgCDrsJTrgIzrqbQg67aZ7J24IOqyg+yymOufvCDrs7Tsnbjri6QuIC0tPgogIDxnIHN0cm9rZT0iI2Q1OWZiNyIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPgogICAgPHBhdGggZD0iTTU2IDE2OEM0NCAxNzYgNDAgMTg0IDQyIDE5MCIvPgogICAgPHBhdGggZD0iTTE2NCAxNjhDMTc2IDE3NiAxODAgMTg0IDE3OCAxOTAiLz4KICA8L2c+CgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPCEtLSDsi53snYDrlYA6IOydtCDsupDrpq3thLDsnZgg7KCV7LK064ukLiDtla3sg4Eg7Jm87Kq9IOq0gOyekOuGgOydtOyXkOyEnCDtlZjrgpjrp4wg7Z2Q66W464ukLiAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNiA2Mikgc2NhbGUoLjM0KSByb3RhdGUoLTI0IDQwIDY2KSI+CiAgICA8cGF0aCBkPSJNNDAgMEM0MCAwIDc2IDQyIDc2IDY2QTM2IDM2IDAgMCAxIDQgNjZDNCA0MiA0MCAwIDQwIDBaIiBmaWxsPSJ1cmwoI2ItZHJvcCkiLz4KICAgIDxlbGxpcHNlIGN4PSIyNyIgY3k9IjUyIiByeD0iMTAiIHJ5PSI4IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIuNTUiLz4KICA8L2c+CiAgPHBhdGggZD0iTTUyIDkycS04IDgtMTIgMTgiIHN0cm9rZT0iI2M5OGZhOSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii43Ii8+CiAgPHBhdGggZD0iTTc0IDEyNHExNC0xNCAyOCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTExOCAxMjRxMTQtMTQgMjggMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgMjAgNDQgMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgNiA0NCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+Cgo8L3N2Zz4K" width="62" alt="" style="margin:0 auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))">
+            <div style="font-size:10.5px;letter-spacing:.12em;opacity:.85;margin-top:6px">놓칠 뻔했네요</div>
+            <b style="font-size:16px">청구 가능성 높음</b>
+            <div style="font-size:11px;opacity:.9;margin-top:2px">남의 물건 파손은 배상책임 담보로 처리합니다</div>
+          </div>
+
+          <div class="glowcard"><div class="inner">
+            <div class="row"><span class="grow"><b style="font-size:12.5px">가족일상생활중배상책임</b><div class="muted">본인 · DB손해보험</div></span>
+              <b class="grad-num" style="font-size:19px">1억<span style="font-size:11px">원</span></b></div>
+          </div></div>
+          <div class="glowcard" style="opacity:.92"><div class="inner">
+            <div class="row"><span class="grow"><b style="font-size:12.5px">일상생활중배상책임</b><div class="muted">배우자 · 한화손해보험</div></span>
+              <b class="grad-num" style="font-size:19px">1억<span style="font-size:11px">원</span></b></div>
+          </div></div>
+
+          <div class="m-card">
+            <b class="m-title">판단 근거 — 약관 원문</b>
+            <div class="quotecard" style="margin-top:7px">피보험자가 일상생활 중 우연한 사고로 타인의 재물에 손해를 입혀 부담하는 법률상 배상책임을 보상합니다.
+              <br><span class="src">DB손해보험 · 제1조(보험금의 지급사유)</span></div>
+          </div>
+
+          <div class="m-card">
+            <div class="row" style="justify-content:space-between"><b class="m-title">준비할 서류</b><span class="pill ok">5개 중 0개</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:7px">
+              <span class="pill">사고 경위서</span><span class="pill">파손 사진</span><span class="pill">수리 견적서</span><span class="pill">청구서</span>
+            </div>
+          </div>
+          <a class="btn-p" style="background:linear-gradient(135deg,#c8517f,#7e1e48)">청구 경로 열기 →</a>
+        </div></div>
+        <figcaption><b>AI 결과 카드 v2</b>결과 히어로(그라디언트+뻐니 found) → 담보 글로우 타일 → 약관 리본 인용(출처 칩) → 서류 체크 → CTA. 이 화면만 화려하다.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">05 — 보험 상식 · 또래 비교</span>
+    <h2>로그인 없는 정보, 로그인해야 보이는 나</h2>
+    <p>보험 상식 탭은 로그인 없이 전부 읽힙니다. 그 안의 <b>「내 보험료, 또래는 얼마나 낼까?」</b> 차트가
+    자연스러운 로그인 유도 장치입니다 — 또래 평균은 보여주고, <b>내 막대만 잠가둡니다.</b></p>
+
+    <div class="frames">
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔"><span class="pill">시작하기</span></div>
+          <div class="m-card">
+            <b class="m-title">30대 후반 남성, 월 보험료</b>
+            <div class="bars">
+              <div class="bar"><i style="height:52px"></i>하위 25%</div>
+              <div class="bar"><i style="height:84px"></i>또래 평균</div>
+              <div class="bar"><i style="height:112px"></i>상위 25%</div>
+              <div class="bar q"><i style="height:96px"><span class="lock">🔒</span></i><b style="color:var(--brand-ink)">나는?</b></div>
+            </div>
+            <a class="btn-p" style="margin-top:10px">로그인하고 내 위치 확인하기</a>
+          </div>
+          <div class="m-card"><b style="font-size:12px">아이가 남의 물건을 깨뜨렸다면?</b><div class="muted" style="margin-top:2px">부모 계약으로도 청구되는 배상책임 이야기</div></div>
+          <div class="m-card"><b style="font-size:12px">실손 청구, 병원에서 끝내는 법</b><div class="muted" style="margin-top:2px">실손24로 서류 없이 접수하기</div></div>
+          <div class="dock"><span>홈</span><span>보장</span><span class="fab">⌕</span><span style="color:var(--brand-ink);font-weight:700">상식</span><span>나</span></div>
+        </div></div>
+        <figcaption><b>로그인 전</b>또래 분포는 그라디언트 막대로 전부 공개, 내 막대만 잠금. 궁금증이 로그인 버튼을 누르게 한다.</figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><img class="m-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" alt="놓칠뻔"><span class="avatar">강</span></div>
+          <div class="m-card">
+            <b class="m-title">30대 후반 남성, 월 보험료</b>
+            <div class="bars">
+              <div class="bar"><i style="height:52px"></i>하위 25%</div>
+              <div class="bar"><i style="height:84px"></i>또래 평균</div>
+              <div class="bar"><i style="height:112px"></i>상위 25%</div>
+              <div class="bar me"><i style="height:74px"></i><b style="color:var(--brand-ink)">나</b></div>
+            </div>
+            <div class="m-card" style="background:var(--brand-soft);border-color:#f0c2d5;margin-top:8px;padding:8px 10px">
+              <b style="font-size:12px;color:var(--brand-ink)">또래 평균보다 12% 적게 내고 있어요</b>
+              <div class="muted" style="margin-top:1px">대신 배상책임 담보가 비어 있어요 — 보장 맵에서 확인</div>
+            </div>
+          </div>
+          <div class="dock"><span>홈</span><span>보장</span><span class="fab">⌕</span><span style="color:var(--brand-ink);font-weight:700">상식</span><span>나</span></div>
+        </div></div>
+        <figcaption><b>로그인 후</b>내 막대가 진한 그라디언트로 들어오고, 비교 결과가 보장 공백 안내로 이어진다 — 정보가 진단으로 연결되는 우리만의 포인트.</figcaption>
+      </figure>
+    </div>
+    <p class="note">또래 데이터는 초기에 공개 통계(보험연구원·통계청)로 시작하고, 사용자 누적 후 자체 분포로 교체한다. 차트 막대는 항상 그라디언트 — 단색 막대 금지.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">06 — Loading</span>
+    <h2>뻐니가 오가며 기다림을 알린다</h2>
+    <p>모든 화면 전환·조회 대기에서 뻐니가 좌우로 오가고, 두 포즈가 번갈아 나타납니다.
+    멈춘 그림은 죽은 화면과 구분되지 않습니다 — 움직임이 곧 "일하는 중"의 신호입니다. 아래는 실제 동작입니다.</p>
+
+    <div class="frames">
+      <figure class="frame">
+        <div class="phone" style="height:360px;display:flex;align-items:center;justify-content:center">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+            <div class="sway"><div class="swap">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg65Kk7KeA64qUIOykkSAo7KGw7ZqMKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KCgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGcgc3Ryb2tlPSIjZDU5ZmI3IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICA8cGF0aCBkPSJNNTYgMTY4QzQ0IDE3NiA0MCAxODQgNDIgMTkwIi8+CiAgICA8cGF0aCBkPSJNMTYyIDE2MkMxNzYgMTYwIDE4NCAxNTQgMTg2IDE0OCIvPgogIDwvZz4KICA8IS0tIOyLneydgOuVgDog7J20IOy6kOumre2EsOydmCDsoJXssrTri6QuIO2VreyDgSDsmbzsqr0g6rSA7J6Q64aA7J207JeQ7IScIO2VmOuCmOunjCDtnZDrpbjri6QuIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4IDk2KSBzY2FsZSguNDIpIj4KICAgIDxwYXRoIGQ9Ik00MCAwQzQwIDAgNzYgNDIgNzYgNjZBMzYgMzYgMCAwIDEgNCA2NkM0IDQyIDQwIDAgNDAgMFoiIGZpbGw9InVybCgjYi1kcm9wKSIvPgogICAgPGVsbGlwc2UgY3g9IjI3IiBjeT0iNTIiIHJ4PSIxMCIgcnk9IjgiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii41NSIvPgogIDwvZz4KICA8ZWxsaXBzZSBjeD0iODgiIGN5PSIxMzAiIHJ4PSIxMSIgcnk9IjEyIiBmaWxsPSIjM2MwYzI0Ii8+CiAgPGVsbGlwc2UgY3g9IjEzMiIgY3k9IjEzMCIgcng9IjExIiByeT0iMTIiIGZpbGw9IiMzYzBjMjQiLz4KICA8Y2lyY2xlIGN4PSI5MiIgY3k9IjEyNSIgcj0iNC4yIiBmaWxsPSIjZmZmZmZmIi8+CiAgPGNpcmNsZSBjeD0iMTM2IiBjeT0iMTI1IiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8cGF0aCBkPSJNNzAgMTA2cTE2LTEyIDMyLTQiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNTAgMTA2cS0xNi0xMi0zMi00IiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS1vcGFjaXR5PSIuNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMTU4IiByeD0iNyIgcnk9IjgiIGZpbGw9IiMzYzBjMjQiLz4KICA8IS0tIOuPi+uztOq4sDog7IaQ64GdKDM0LDE0OCnsl5DshJwg7Iuc7J6R7ZWc64ukLiDshpDqs7wg65ao7Ja07KeA66m0IOuWoCDsnojripQg7IaM7ZKI7J20IOuQnOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTU4IDExMikiPgogICAgPGNpcmNsZSBjeD0iMjYiIGN5PSIyNiIgcj0iMTkiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iLjg1IiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgPHBhdGggZD0iTTEyIDQwTC0xIDUzIiBzdHJva2U9IiM3ZTFlNDgiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8cGF0aCBkPSJNMTggMThhMTIgMTIgMCAwIDEgOS00IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPC9nPgo8L3N2Zz4K" width="94" alt="">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7IK07Y6067O064qUIOykkSAo7KeE64uoKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KCgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGcgc3Ryb2tlPSIjZDU5ZmI3IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICA8cGF0aCBkPSJNNTYgMTY4QzQ0IDE3NiA0MCAxODQgNDIgMTkwIi8+CiAgICA8cGF0aCBkPSJNMTcwIDE3MEMxODQgMTU4IDE3MiAxNDQgMTUyIDE1MCIvPgogIDwvZz4KICA8IS0tIOyLneydgOuVgDog7J20IOy6kOumre2EsOydmCDsoJXssrTri6QuIO2VreyDgSDsmbzsqr0g6rSA7J6Q64aA7J207JeQ7IScIO2VmOuCmOunjCDtnZDrpbjri6QuIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4IDk2KSBzY2FsZSguNDIpIj4KICAgIDxwYXRoIGQ9Ik00MCAwQzQwIDAgNzYgNDIgNzYgNjZBMzYgMzYgMCAwIDEgNCA2NkM0IDQyIDQwIDAgNDAgMFoiIGZpbGw9InVybCgjYi1kcm9wKSIvPgogICAgPGVsbGlwc2UgY3g9IjI3IiBjeT0iNTIiIHJ4PSIxMCIgcnk9IjgiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii41NSIvPgogIDwvZz4KICA8ZWxsaXBzZSBjeD0iODgiIGN5PSIxMzAiIHJ4PSIxMSIgcnk9IjEyIiBmaWxsPSIjM2MwYzI0Ii8+CiAgPGVsbGlwc2UgY3g9IjEzMiIgY3k9IjEzMCIgcng9IjExIiByeT0iMTIiIGZpbGw9IiMzYzBjMjQiLz4KICA8Y2lyY2xlIGN4PSI5MCIgY3k9IjEyMiIgcj0iNC4yIiBmaWxsPSIjZmZmZmZmIi8+CiAgPGNpcmNsZSBjeD0iMTM0IiBjeT0iMTIyIiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8cGF0aCBkPSJNNzAgMTA2cTE2LTEyIDMyLTQiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNTAgMTA2cS0xNi0xMi0zMi00IiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS1vcGFjaXR5PSIuNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMTU4IiByeD0iNyIgcnk9IjgiIGZpbGw9IiMzYzBjMjQiLz4KICA8dGV4dCB4PSIyOCIgeT0iNzAiIGZvbnQtZmFtaWx5PSJQcmV0ZW5kYXJkLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjYTMyYTVlIiBvcGFjaXR5PSIuOSI+PzwvdGV4dD4KPC9zdmc+Cg==" width="94" alt="">
+            </div></div>
+            <div class="bubble"><b style="color:var(--ink)">잠깐이면 돼요</b><br>어떤 담보가 걸리는지 뒤져보고 있어요<span class="d">.</span><span class="d">.</span><span class="d">.</span></div>
+          </div>
+        </div>
+        <figcaption><b>화면 전환 로딩</b>헤드라인은 "잠깐이면 돼요" — 기계의 말 대신 안심시키는 말. route 마다 문구와 포즈 짝이 정해져 있다 — 보장: 살펴보는 중, 가족: 맞추는 중, 조회: 뒤지는 중.</figcaption>
+      </figure>
+      <figure class="frame">
+        <div class="phone" style="height:360px;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 80% at 50% 18%, var(--brand-soft) 0%, transparent 60%), var(--sub)">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg66eh6rKo7KSYICjssqsg7ZmU66m0KSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KICA8ZyBzdHJva2U9IiNkNTlmYjciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik01NCAxNThDMzYgMTY0IDMwIDE3NiA0NCAxODYiLz4KICAgIDxwYXRoIGQ9Ik0xNjYgMTU4QzE4NCAxNjQgMTkwIDE3NiAxNzYgMTg2Ii8+CiAgPC9nPgoKICA8ZyBmaWx0ZXI9InVybCgjYi1zaGFkb3cpIj4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0idXJsKCNiLWJvZHkpIi8+CiAgICA8ZyBjbGlwLXBhdGg9InVybCgjYi1jbGlwKSI+CiAgICAgIDxlbGxpcHNlIGN4PSI4MCIgY3k9Ijc0IiByeD0iMzQiIHJ5PSIyNiIgZmlsbD0idXJsKCNiLXNwZWMpIiBmaWx0ZXI9InVybCgjYi1zb2Z0KSIvPgogICAgICA8ZWxsaXBzZSBjeD0iMTMwIiBjeT0iMTg4IiByeD0iODAiIHJ5PSI0NiIgZmlsbD0iI2U5YmNjZiIgb3BhY2l0eT0iLjUiLz4KICAgIDwvZz4KICAgIDxwYXRoIGQ9Ik0xMTAgMjZDMTEwIDI2IDE3NiA5NiAxNzYgMTQwQTY2IDY2IDAgMCAxIDQ0IDE0MEM0NCA5NiAxMTAgMjYgMTEwIDI2WiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTMyYTVlIiBzdHJva2Utb3BhY2l0eT0iLjM1IiBzdHJva2Utd2lkdGg9IjIuNSIvPgogIDwvZz4KCiAgPGVsbGlwc2UgY3g9IjcyIiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGVsbGlwc2UgY3g9IjE0OCIgY3k9IjE1MiIgcng9IjEzIiByeT0iOCIgZmlsbD0idXJsKCNiLWNoZWVrKSIvPgogIDwhLS0g7Iud7J2A65WAOiDsnbQg7LqQ66at7YSw7J2YIOygleyytOuLpC4g7ZWt7IOBIOyZvOyqvSDqtIDsnpDrhoDsnbTsl5DshJwg7ZWY64KY66eMIO2dkOuluOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzggOTYpIHNjYWxlKC40MikiPgogICAgPHBhdGggZD0iTTQwIDBDNDAgMCA3NiA0MiA3NiA2NkEzNiAzNiAwIDAgMSA0IDY2QzQgNDIgNDAgMCA0MCAwWiIgZmlsbD0idXJsKCNiLWRyb3ApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMjciIGN5PSI1MiIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iLjU1Ii8+CiAgPC9nPgogIDwhLS0g64iIOiDsnITroZwg7IK07KedIOy5mOy8nOucrCDsnpDsi6DqsJAuIO2dsCDsoJDsnYQg7YGs6rKMIOuEo+yWtCDrmJDroLftlZjqsowg66eM65Og64ukLiAtLT4KICA8ZWxsaXBzZSBjeD0iODgiIGN5PSIxMjgiIHJ4PSIxMSIgcnk9IjEyIiBmaWxsPSIjM2MwYzI0Ii8+CiAgPGVsbGlwc2UgY3g9IjEzMiIgY3k9IjEyOCIgcng9IjExIiByeT0iMTIiIGZpbGw9IiMzYzBjMjQiLz4KICA8Y2lyY2xlIGN4PSI5MiIgY3k9IjEyMyIgcj0iNC4yIiBmaWxsPSIjZmZmZmZmIi8+CiAgPGNpcmNsZSBjeD0iMTM2IiBjeT0iMTIzIiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8cGF0aCBkPSJNNzAgMTA2cTE2LTEyIDMyLTQiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNTAgMTA2cS0xNi0xMi0zMi00IiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS1vcGFjaXR5PSIuNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNOTAgMTU2cTIwIDE4IDQwIDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8IS0tIOuwmOynneyehDog7J6Q7Iug6rCQ7J2YIOyLoO2YuC4g65WA67Cp7Jq4IOuwmOuMgO2OuOyXkCDrkazshJwg65GY7J20IOqyuey5mOyngCDslYrripTri6QuIC0tPgogIDxwYXRoIGQ9Ik0xODIgNzhsNCAxMSAxMSA0LTExIDQtNCAxMS00LTExLTExLTQgMTEtNHoiIGZpbGw9IiNhMzJhNWUiIG9wYWNpdHk9Ii44NSIvPgoKPC9zdmc+Cg==" width="104" alt="" class="sway" style="animation-duration:3.4s">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzYgMTMwIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg6rCA66Gc7ZiVIOuhnOqzoCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImQtYm9keSIgeDE9IjI2JSIgeTE9IjQlIiB4Mj0iNzQlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPjxzdG9wIG9mZnNldD0iLjUyIiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJkLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM0JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuNzgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iZC1yaW0iIGN4PSI2MiUiIGN5PSI4NiUiIHI9IjQ2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIuNSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZDdlNiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZC1zaGFkb3ciIHg9Ii00NSUiIHk9Ii0yNSUiIHdpZHRoPSIxOTAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iOSIgc3RkRGV2aWF0aW9uPSI5IiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjI2Ii8+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIyIiBzdGREZXZpYXRpb249IjIiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMiIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJkLWJsdXIiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjUiLz48L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iZC1jbGlwIj48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiLz48L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMjA1LjciIGN5PSIxMDguMCIgcng9IjI3LjIiIHJ5PSI1IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTIiLz4KICA8cGF0aCBkPSJNMTU2NiAtNTY4SDEwMjZWLTY4NEg3MzZWLTU2OEgxOTZWLTM1NkgxNTY2Wk0xNTQ2IC0xMjk4SDU0NlYtMTYxNkgyNThWLTEwNzZINzUyVi05NjBINDZWLTczMkgxNzI0Vi05NjBIMTAzOFYtMTA3NkgxNTQ2Wk04ODAgLTMxMkM1MjQgLTMxMiAzMTQgLTIyMiAzMTQgLTYyQzMxNCAxMDIgNTI0IDE5NCA4ODAgMTkyQzEyMzYgMTk0IDE0NDggMTAyIDE0NDggLTYyQzE0NDggLTIyMiAxMjM2IC0zMTIgODgwIC0zMTJaTTg4MCAtMTE4QzEwNTQgLTExOCAxMTQyIC0xMDggMTE0NCAtNjJDMTE0MiAtMTQgMTA1NCAtMiA4ODAgLTJDNzA0IC0yIDYyMCAtMTQgNjIwIC02MkM2MjAgLTEwOCA3MDQgLTExOCA4ODAgLTExOFoiIGZpbGw9IiMyYTExMTkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLjAwIDEwMC4wMCkgc2NhbGUoMC4wMzYxMykiLz48cGF0aCBkPSJNMTU5MCAtMTY0NEgxMzAyVi02ODRIMTU5MFpNMTU5MCAtNjIySDM0NlYtNDA2SDEzMDJWLTMyNEgzNTJWMTgySDE2MzRWLTM4SDYzMlYtMTI2SDE1OTBaTTExMzYgLTE0OTJINzc4Vi0xNjUwSDQ4NlYtMTQ5MkgxMjZWLTEyNjhINDgyQzQ1NiAtMTExNSAzMjkgLTk2OCA1OCAtOTA4TDE4NCAtNjgyQzQwNCAtNzMzIDU1MSAtODQ3IDYzNiAtOTk0QzcxOSAtODU3IDg2NSAtNzUwIDEwODQgLTcwNkwxMjEwIC05MjRDOTM0IC05NzggODA2IC0xMTIzIDc4MiAtMTI2OEgxMTM2WiIgZmlsbD0iIzJhMTExOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODEuNzQgMTAwLjAwKSBzY2FsZSgwLjAzNjEzKSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1NS43IC0zLjApIHNjYWxlKDAuNSkiPjxnIGZpbHRlcj0idXJsKCNkLXNoYWRvdykiPjxwYXRoIGQ9Ik0xMDAgMTJDMTAwIDEyIDE3MiA5NCAxNzIgMTQ0QTcyIDcyIDAgMSAxIDI4IDE0NEMyOCA5NCAxMDAgMTIgMTAwIDEyWiIgZmlsbD0idXJsKCNkLWJvZHkpIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2QtY2xpcCkiPjxlbGxpcHNlIGN4PSIxMTgiIGN5PSIxODgiIHJ4PSI4NiIgcnk9IjUyIiBmaWxsPSJ1cmwoI2QtcmltKSIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjY2IiByeD0iNDAiIHJ5PSIzMCIgZmlsbD0idXJsKCNkLXNwZWMpIiBmaWx0ZXI9InVybCgjZC1ibHVyKSIvPjxwYXRoIGQ9Ik03OCA0NEM2NCA2MiA1NCA4MCA1MiAxMDAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvZz48cGF0aCBkPSJNMTAwIDEyQzEwMCAxMiAxNzIgOTQgMTcyIDE0NEE3MiA3MiAwIDEgMSAyOCAxNDRDMjggOTQgMTAwIDEyIDEwMCAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVjMTQzNSIgc3Ryb2tlLW9wYWNpdHk9Ii4yNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE2NTAgLTE2NDRIMTM2NlYtMTE1NkgxMjQwVi0xNTA0SDEwMTJWLTEyMzhIOTI2Vi0xNTA0SDY5NFYtNTY2SDEyNDBWLTkyNEgxMzY2Vi0yOTZIMTY1MFpNMzEwIC0xNTA0SDc0Vi01NjZINjMwVi0xNTA0SDM5NlYtMTIzOEgzMTBaTTMxMCAtNzk0Vi0xMDIwSDM5NlYtNzk0Wk05MjYgLTc5NFYtMTAyMEgxMDEyVi03OTRaTTE2OTYgLTY4SDYyNlYtNDMySDMzOFYxNjJIMTY5NloiIGZpbGw9IiNmZmZmZmYiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4LjUyIDE4MC43Mykgc2NhbGUoMC4wNDY4OCkiLz48L2c+PC9nPgo8L3N2Zz4K" style="height:30px" alt="놓칠뻔">
+            <span class="muted" style="font-size:12px">우리 가족 보험, 놓치지 않게</span>
+          </div>
+        </div>
+        <figcaption><b>앱 실행 스플래시</b>자신감 포즈는 여기 전용. 1.4초 뒤 스스로 사라진다.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+
+  <section>
+    <span class="eyebrow">06 — Profile</span>
+    <h2>얼굴이 있는 계정, 팔지 않는 메뉴</h2>
+    <p>굿리치의 「내 정보」 골격 — 프로필 헤더 · 아이콘 4열 · 묶음 리스트 · 비교 배너 · 푸터 — 을 그대로 따르되,
+    <b>프로필 사진</b>을 넣어 일반 메뉴에서도 얼굴이 보이게 하고, 상품 추천·플래너 연결 같은
+    <b>판매 동선은 넣지 않습니다.</b> 우리는 가입시키는 앱이 아니라 <b>이미 가진 걸 못 쓰고 넘어가지 않게 하는 앱</b>이라서,
+    메뉴는 지금까지 계획한 기능만으로 채웁니다.</p>
+
+    <div class="frames">
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><b style="font-size:13px">내 정보</b><span class="pill">⚙︎ 설정</span></div>
+
+          <div class="m-card row" style="gap:11px">
+            <span style="position:relative;flex:none">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7JWI64WV7ZWY7IS47JqUICjssqsg67Cp66y4wrfsmKjrs7TrlKkpIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYi1ib2R5IiB4MT0iMjQlIiB5MT0iNiUiIHgyPSI3NiUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjZmRlZWY0Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2Y0ZDdlMyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYi1kcm9wIiB4MT0iMjAlIiB5MT0iMCUiIHgyPSI4MCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjYzg1MTdmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNhMzJhNWUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuOTUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImItY2hlZWsiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIuNTUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZjA4YmIwIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJiLXNoYWRvdyIgeD0iLTQwJSIgeT0iLTMwJSIgd2lkdGg9IjE4MCUiIGhlaWdodD0iMTgwJSI+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIxMCIgc3RkRGV2aWF0aW9uPSIxMCIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4yNiIvPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIyIiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjE4Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxmaWx0ZXIgaWQ9ImItc29mdCIgeD0iLTUwJSIgeT0iLTUwJSIgd2lkdGg9IjIwMCUiIGhlaWdodD0iMjAwJSI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQiLz4KICAgIDwvZmlsdGVyPgogICAgPGNsaXBQYXRoIGlkPSJiLWNsaXAiPgogICAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiLz4KICAgIDwvY2xpcFBhdGg+CiAgPC9kZWZzPgogIDxlbGxpcHNlIGN4PSIxMTAiIGN5PSIyMTIiIHJ4PSI1NCIgcnk9IjkiIGZpbGw9IiMzYzBjMjQiIG9wYWNpdHk9Ii4xMyIvPgoKCiAgPGcgZmlsdGVyPSJ1cmwoI2Itc2hhZG93KSI+CiAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiIGZpbGw9InVybCgjYi1ib2R5KSIvPgogICAgPGcgY2xpcC1wYXRoPSJ1cmwoI2ItY2xpcCkiPgogICAgICA8ZWxsaXBzZSBjeD0iODAiIGN5PSI3NCIgcng9IjM0IiByeT0iMjYiIGZpbGw9InVybCgjYi1zcGVjKSIgZmlsdGVyPSJ1cmwoI2Itc29mdCkiLz4KICAgICAgPGVsbGlwc2UgY3g9IjEzMCIgY3k9IjE4OCIgcng9IjgwIiByeT0iNDYiIGZpbGw9IiNlOWJjY2YiIG9wYWNpdHk9Ii41Ii8+CiAgICA8L2c+CiAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2EzMmE1ZSIgc3Ryb2tlLW9wYWNpdHk9Ii4zNSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8L2c+CgogIDxlbGxpcHNlIGN4PSI3MiIgY3k9IjE1MiIgcng9IjEzIiByeT0iOCIgZmlsbD0idXJsKCNiLWNoZWVrKSIvPgogIDxlbGxpcHNlIGN4PSIxNDgiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZyBzdHJva2U9IiNkNTlmYjciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik01NiAxNjhDNDQgMTc2IDQwIDE4NCA0MiAxOTAiLz4KICAgIDxwYXRoIGQ9Ik0xNjQgMTYwQzE4MCAxNDggMTg2IDEzNCAxODQgMTIyIi8+CiAgPC9nPgogIDwhLS0g7Iud7J2A65WAOiDsnbQg7LqQ66at7YSw7J2YIOygleyytOuLpC4g7ZWt7IOBIOyZvOyqvSDqtIDsnpDrhoDsnbTsl5DshJwg7ZWY64KY66eMIO2dkOuluOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzggOTYpIHNjYWxlKC40MikiPgogICAgPHBhdGggZD0iTTQwIDBDNDAgMCA3NiA0MiA3NiA2NkEzNiAzNiAwIDAgMSA0IDY2QzQgNDIgNDAgMCA0MCAwWiIgZmlsbD0idXJsKCNiLWRyb3ApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMjciIGN5PSI1MiIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iLjU1Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik03NCAxMzJxMTQtMTQgMjggMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xMTggMTMycTE0LTE0IDI4IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNOTIgMTU4cTE4IDE2IDM2IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8ZyBzdHJva2U9IiNlM2IzYzgiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik0xOTYgMTE2cTctMyAxMS05Ii8+CiAgICA8cGF0aCBkPSJNMTkwIDEwNHE4LTEgMTQtNiIvPgogIDwvZz4KPC9zdmc+Cg==" width="46" alt=""
+                   style="display:block;border-radius:999px;background:var(--brand-soft);border:1px solid #f0c2d5">
+              <span style="position:absolute;right:-3px;bottom:-3px;width:19px;height:19px;border-radius:999px;
+                    background:var(--brand-grad);color:#fff;display:grid;place-items:center;font-size:9px;
+                    border:2px solid #fff;box-shadow:var(--e1)">＋</span>
+            </span>
+            <span class="grow">
+              <b style="font-size:14px">강병구</b> <span class="pill ok">관리자</span>
+              <br><span class="muted">우리집 · 구성원 3명</span>
+            </span>
+            <span class="muted">›</span>
+          </div>
+          <p class="muted" style="margin:-4px 2px 0">사진을 올리면 홈 헤더·레일·가족 목록에 함께 반영됩니다.</p>
+
+          <div class="m-card row" style="padding:11px 6px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:36px;height:36px;border-radius:12px;background:var(--brand-soft);border:1px solid #f0c2d5;display:grid;place-items:center;font-size:15px">🔔</span><span class="muted">알림</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:36px;height:36px;border-radius:12px;background:var(--brand-soft);border:1px solid #f0c2d5;display:grid;place-items:center;font-size:15px">👨‍👩‍👧</span><span class="muted">가족</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:36px;height:36px;border-radius:12px;background:var(--brand-soft);border:1px solid #f0c2d5;display:grid;place-items:center;font-size:15px">💬</span><span class="muted">문의</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:36px;height:36px;border-radius:12px;background:var(--brand-soft);border:1px solid #f0c2d5;display:grid;place-items:center;font-size:15px">⚙︎</span><span class="muted">설정</span></div>
+          </div>
+
+          <div class="m-card" style="padding:4px 12px 10px">
+            <div class="row" style="padding:9px 2px"><span class="grow"><b style="font-size:12.5px">내 보험</b>
+              <br><span class="muted">유지 17건 · 월 416,861원</span></span><span class="muted">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">보장 분석</b><br><span class="muted">겹치는 담보 · 빈 담보</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">담보 여력</b> <span class="pill ok">NEW</span><br><span class="muted">얼마 남았는지 도넛으로</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">보험금 받은 내역</b> <span class="pill ok">NEW</span><br><span class="muted">언제 · 어디서 · 얼마</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">청구 기한 알림</b><br><span class="muted">소멸시효 3년</span></span><span class="muted" style="white-space:nowrap">2건 임박</span></div>
+          </div>
+
+          <div class="hero row" style="gap:10px;padding:12px">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7LC+7JWY64ukICjsp4Tri6gg7JmE66OMKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KICA8IS0tIO2MlDog66q4IOuSpOyXkOyEnCDrgpjsmKjri6QuIOyInOyEnOqwgCDrsJTrgIzrqbQg67aZ7J24IOqyg+yymOufvCDrs7Tsnbjri6QuIC0tPgogIDxnIHN0cm9rZT0iI2Q1OWZiNyIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPgogICAgPHBhdGggZD0iTTU2IDE2OEM0NCAxNzYgNDAgMTg0IDQyIDE5MCIvPgogICAgPHBhdGggZD0iTTE2NCAxNjhDMTc2IDE3NiAxODAgMTg0IDE3OCAxOTAiLz4KICA8L2c+CgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPCEtLSDsi53snYDrlYA6IOydtCDsupDrpq3thLDsnZgg7KCV7LK064ukLiDtla3sg4Eg7Jm87Kq9IOq0gOyekOuGgOydtOyXkOyEnCDtlZjrgpjrp4wg7Z2Q66W464ukLiAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNiA2Mikgc2NhbGUoLjM0KSByb3RhdGUoLTI0IDQwIDY2KSI+CiAgICA8cGF0aCBkPSJNNDAgMEM0MCAwIDc2IDQyIDc2IDY2QTM2IDM2IDAgMCAxIDQgNjZDNCA0MiA0MCAwIDQwIDBaIiBmaWxsPSJ1cmwoI2ItZHJvcCkiLz4KICAgIDxlbGxpcHNlIGN4PSIyNyIgY3k9IjUyIiByeD0iMTAiIHJ5PSI4IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIuNTUiLz4KICA8L2c+CiAgPHBhdGggZD0iTTUyIDkycS04IDgtMTIgMTgiIHN0cm9rZT0iI2M5OGZhOSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii43Ii8+CiAgPHBhdGggZD0iTTc0IDEyNHExNC0xNCAyOCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTExOCAxMjRxMTQtMTQgMjggMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgMjAgNDQgMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgNiA0NCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+Cgo8L3N2Zz4K" width="42" alt="">
+            <span class="grow"><b style="font-size:12.5px">내 보험 vs 또래 보험</b>
+              <br><span style="font-size:10.5px;opacity:.85">같은 30대 4인 가구는 얼마 낼까</span></span>
+            <span class="go">›</span>
+          </div>
+
+          <div class="m-card" style="padding:4px 12px 10px">
+            <div class="row" style="padding:9px 2px"><span class="grow"><b style="font-size:12.5px">약관 및 정책</b></span><span class="muted">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">회사 소개 (글로허브)</b></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">알아두실 사항</b><br><span class="muted">놓칠뻔은 보험금 산정·청구 대행을 하지 않습니다</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">내 데이터 내려받기 · 삭제</b></span><span class="muted" style="white-space:nowrap">›</span></div>
+          </div>
+        </div></div>
+        <figcaption><b>내 정보 — 굿리치 골격 + 우리 메뉴</b>
+        아바타 우하단 ＋ 배지가 사진 업로드 진입점. 리스트는 계획된 기능만 —
+        추천플래너·상품추천·자동차보험 알아보기는 <strong>넣지 않습니다.</strong></figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><span class="row" style="gap:6px"><span class="muted">‹</span><b style="font-size:13px">프로필 사진</b></span></div>
+          <div class="m-card" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 12px">
+            <span style="width:118px;height:118px;border-radius:999px;background:var(--brand-soft);
+                  border:2px dashed #e0a5c0;display:grid;place-items:center;overflow:hidden">
+              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7JWI64WV7ZWY7IS47JqUICjssqsg67Cp66y4wrfsmKjrs7TrlKkpIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYi1ib2R5IiB4MT0iMjQlIiB5MT0iNiUiIHgyPSI3NiUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjZmRlZWY0Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2Y0ZDdlMyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYi1kcm9wIiB4MT0iMjAlIiB5MT0iMCUiIHgyPSI4MCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjYzg1MTdmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNhMzJhNWUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNmYxNzQwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLXNwZWMiIGN4PSIzNCUiIGN5PSIyNiUiIHI9IjM2JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIuOTUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZmZmZmIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImItY2hlZWsiIGN4PSI1MCUiIGN5PSI1MCUiIHI9IjUwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIuNTUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZjA4YmIwIiBzdG9wLW9wYWNpdHk9IjAiLz4KICAgIDwvcmFkaWFsR3JhZGllbnQ+CiAgICA8ZmlsdGVyIGlkPSJiLXNoYWRvdyIgeD0iLTQwJSIgeT0iLTMwJSIgd2lkdGg9IjE4MCUiIGhlaWdodD0iMTgwJSI+CiAgICAgIDxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSIxMCIgc3RkRGV2aWF0aW9uPSIxMCIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4yNiIvPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIyIiBmbG9vZC1jb2xvcj0iIzNjMGMyNCIgZmxvb2Qtb3BhY2l0eT0iLjE4Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxmaWx0ZXIgaWQ9ImItc29mdCIgeD0iLTUwJSIgeT0iLTUwJSIgd2lkdGg9IjIwMCUiIGhlaWdodD0iMjAwJSI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQiLz4KICAgIDwvZmlsdGVyPgogICAgPGNsaXBQYXRoIGlkPSJiLWNsaXAiPgogICAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiLz4KICAgIDwvY2xpcFBhdGg+CiAgPC9kZWZzPgogIDxlbGxpcHNlIGN4PSIxMTAiIGN5PSIyMTIiIHJ4PSI1NCIgcnk9IjkiIGZpbGw9IiMzYzBjMjQiIG9wYWNpdHk9Ii4xMyIvPgoKCiAgPGcgZmlsdGVyPSJ1cmwoI2Itc2hhZG93KSI+CiAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiIGZpbGw9InVybCgjYi1ib2R5KSIvPgogICAgPGcgY2xpcC1wYXRoPSJ1cmwoI2ItY2xpcCkiPgogICAgICA8ZWxsaXBzZSBjeD0iODAiIGN5PSI3NCIgcng9IjM0IiByeT0iMjYiIGZpbGw9InVybCgjYi1zcGVjKSIgZmlsdGVyPSJ1cmwoI2Itc29mdCkiLz4KICAgICAgPGVsbGlwc2UgY3g9IjEzMCIgY3k9IjE4OCIgcng9IjgwIiByeT0iNDYiIGZpbGw9IiNlOWJjY2YiIG9wYWNpdHk9Ii41Ii8+CiAgICA8L2c+CiAgICA8cGF0aCBkPSJNMTEwIDI2QzExMCAyNiAxNzYgOTYgMTc2IDE0MEE2NiA2NiAwIDAgMSA0NCAxNDBDNDQgOTYgMTEwIDI2IDExMCAyNloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2EzMmE1ZSIgc3Ryb2tlLW9wYWNpdHk9Ii4zNSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8L2c+CgogIDxlbGxpcHNlIGN4PSI3MiIgY3k9IjE1MiIgcng9IjEzIiByeT0iOCIgZmlsbD0idXJsKCNiLWNoZWVrKSIvPgogIDxlbGxpcHNlIGN4PSIxNDgiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZyBzdHJva2U9IiNkNTlmYjciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik01NiAxNjhDNDQgMTc2IDQwIDE4NCA0MiAxOTAiLz4KICAgIDxwYXRoIGQ9Ik0xNjQgMTYwQzE4MCAxNDggMTg2IDEzNCAxODQgMTIyIi8+CiAgPC9nPgogIDwhLS0g7Iud7J2A65WAOiDsnbQg7LqQ66at7YSw7J2YIOygleyytOuLpC4g7ZWt7IOBIOyZvOyqvSDqtIDsnpDrhoDsnbTsl5DshJwg7ZWY64KY66eMIO2dkOuluOuLpC4gLS0+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzggOTYpIHNjYWxlKC40MikiPgogICAgPHBhdGggZD0iTTQwIDBDNDAgMCA3NiA0MiA3NiA2NkEzNiAzNiAwIDAgMSA0IDY2QzQgNDIgNDAgMCA0MCAwWiIgZmlsbD0idXJsKCNiLWRyb3ApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMjciIGN5PSI1MiIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iLjU1Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik03NCAxMzJxMTQtMTQgMjggMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xMTggMTMycTE0LTE0IDI4IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNOTIgMTU4cTE4IDE2IDM2IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8ZyBzdHJva2U9IiNlM2IzYzgiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik0xOTYgMTE2cTctMyAxMS05Ii8+CiAgICA8cGF0aCBkPSJNMTkwIDEwNHE4LTEgMTQtNiIvPgogIDwvZz4KPC9zdmc+Cg==" width="96" alt="">
+            </span>
+            <b style="font-size:12.5px">정사각으로 잘라 저장합니다</b>
+            <span class="muted" style="text-align:center;line-height:1.5">
+              256×256으로 줄여 올리며, 원본은 기기에 남지 않습니다.<br>사진은 가족 구성원에게만 보입니다.
+            </span>
+          </div>
+          <div class="m-card" style="padding:4px 12px 10px">
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">앨범에서 고르기</b></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">사진 찍기</b></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">기본 아바타로 되돌리기</b><br><span class="muted">이름 첫 글자 + 플럼 그라디언트</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+          </div>
+          <span class="btn-p">저장</span>
+          <div class="m-card row" style="gap:9px;background:var(--sub)">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7JWI7KCEIOyViOuCtCAo6rCc7J247KCV67O0KSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KCgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGcgc3Ryb2tlPSIjZDU5ZmI3IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICA8cGF0aCBkPSJNNTYgMTY4QzQ0IDE3NiA0MCAxODQgNDIgMTkwIi8+CiAgICA8cGF0aCBkPSJNMTYyIDE2MkMxNzYgMTYwIDE4NCAxNTQgMTg2IDE0OCIvPgogIDwvZz4KICA8IS0tIOyLneydgOuVgDog7J20IOy6kOumre2EsOydmCDsoJXssrTri6QuIO2VreyDgSDsmbzsqr0g6rSA7J6Q64aA7J207JeQ7IScIO2VmOuCmOunjCDtnZDrpbjri6QuIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4IDk2KSBzY2FsZSguNDIpIj4KICAgIDxwYXRoIGQ9Ik00MCAwQzQwIDAgNzYgNDIgNzYgNjZBMzYgMzYgMCAwIDEgNCA2NkM0IDQyIDQwIDAgNDAgMFoiIGZpbGw9InVybCgjYi1kcm9wKSIvPgogICAgPGVsbGlwc2UgY3g9IjI3IiBjeT0iNTIiIHJ4PSIxMCIgcnk9IjgiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii41NSIvPgogIDwvZz4KICA8cGF0aCBkPSJNNzQgMTMycTE0LTE0IDI4IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNMTE4IDEzMnExNC0xNCAyOCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTkyIDE1OHExOCAxNiAzNiAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTYwIDExMCkiPgogICAgPHBhdGggZD0iTTI0IDBsMjIgOXYxOGMwIDEzLTkgMjMtMjIgMjdDMTEgNTAgMiA0MCAyIDI3Vjl6IiBmaWxsPSJ1cmwoI2ItZHJvcCkiLz4KICAgIDxwYXRoIGQ9Ik0xNCAyNmw3IDcgMTMtMTQiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8L2c+Cjwvc3ZnPgo=" width="34" alt="" class="mascot">
+            <span class="grow" style="font-size:11px;color:var(--ink-2);line-height:1.5">
+              얼굴 사진은 보험 심사·요율에 절대 쓰이지 않아요. 화면에서 가족을 구분하는 용도예요.</span>
+          </div>
+        </div></div>
+        <figcaption><b>사진 업로드</b> 기기에서 정사각 크롭 → 256px 리사이즈 → 비공개 버킷에 저장,
+        화면에는 짧은 수명의 서명 URL로만 노출. 미설정이면 현행 이니셜 아바타로 폴백.</figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><b style="font-size:13px">궁금한 것부터</b><span class="pill ok">우리만</span></div>
+          <div class="m-card row" style="gap:9px">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7IK07Y6067O064qUIOykkSAo7KeE64uoKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KCgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGcgc3Ryb2tlPSIjZDU5ZmI3IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICA8cGF0aCBkPSJNNTYgMTY4QzQ0IDE3NiA0MCAxODQgNDIgMTkwIi8+CiAgICA8cGF0aCBkPSJNMTcwIDE3MEMxODQgMTU4IDE3MiAxNDQgMTUyIDE1MCIvPgogIDwvZz4KICA8IS0tIOyLneydgOuVgDog7J20IOy6kOumre2EsOydmCDsoJXssrTri6QuIO2VreyDgSDsmbzsqr0g6rSA7J6Q64aA7J207JeQ7IScIO2VmOuCmOunjCDtnZDrpbjri6QuIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4IDk2KSBzY2FsZSguNDIpIj4KICAgIDxwYXRoIGQ9Ik00MCAwQzQwIDAgNzYgNDIgNzYgNjZBMzYgMzYgMCAwIDEgNCA2NkM0IDQyIDQwIDAgNDAgMFoiIGZpbGw9InVybCgjYi1kcm9wKSIvPgogICAgPGVsbGlwc2UgY3g9IjI3IiBjeT0iNTIiIHJ4PSIxMCIgcnk9IjgiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii41NSIvPgogIDwvZz4KICA8ZWxsaXBzZSBjeD0iODgiIGN5PSIxMzAiIHJ4PSIxMSIgcnk9IjEyIiBmaWxsPSIjM2MwYzI0Ii8+CiAgPGVsbGlwc2UgY3g9IjEzMiIgY3k9IjEzMCIgcng9IjExIiByeT0iMTIiIGZpbGw9IiMzYzBjMjQiLz4KICA8Y2lyY2xlIGN4PSI5MCIgY3k9IjEyMiIgcj0iNC4yIiBmaWxsPSIjZmZmZmZmIi8+CiAgPGNpcmNsZSBjeD0iMTM0IiBjeT0iMTIyIiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiLz4KICA8cGF0aCBkPSJNNzAgMTA2cTE2LTEyIDMyLTQiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLW9wYWNpdHk9Ii42IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0xNTAgMTA2cS0xNi0xMi0zMi00IiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS1vcGFjaXR5PSIuNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMTU4IiByeD0iNyIgcnk9IjgiIGZpbGw9IiMzYzBjMjQiLz4KICA8dGV4dCB4PSIyOCIgeT0iNzAiIGZvbnQtZmFtaWx5PSJQcmV0ZW5kYXJkLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjYTMyYTVlIiBvcGFjaXR5PSIuOSI+PzwvdGV4dD4KPC9zdmc+Cg==" width="38" alt="" class="mascot">
+            <span class="grow" style="font-size:11.5px;color:var(--ink-2);line-height:1.5">
+              보험 앱에서 제일 많이 막히는 다섯 가지. <b>내 계약으로 바로 답합니다.</b></span>
+          </div>
+          <div class="m-card" style="padding:4px 12px 10px">
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">1. 지금 청구할 수 있는 게 남았나?</b><br><span class="muted">소멸시효 3년 · 진료내역 대조</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">2. 왜 깎였지 / 왜 거절됐지?</b><br><span class="muted">면책·감액 조항을 원문으로</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">3. 두 개 들었는데 두 배 받나?</b><br><span class="muted">실손 비례보상 vs 정액 중복</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">4. 보험료 언제 또 오르지?</b><br><span class="muted">갱신 주기 · 다음 갱신일</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">5. 청구하면 불이익 있나?</b><br><span class="muted">갱신 거절·할증 조건</span></span><span class="muted" style="white-space:nowrap">›</span></div>
+          </div>
+          <p class="muted" style="margin:0 2px">각 답은 <b>내 약관 조항 번호</b>와 함께 나옵니다. 조항을 못 찾으면 답하지 않습니다.</p>
+        </div></div>
+        <figcaption><b>TOP 5 — 굿리치에 없는 메뉴</b>
+        분쟁의 대부분이 「지급 갈등」이라는 점에서 출발했습니다. 상품을 고르는 질문이 아니라
+        <strong>이미 든 보험을 못 쓰고 있는 질문</strong>만 다룹니다.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">07 — Capacity</span>
+    <h2>얼마 남았는지가 보여야 청구한다</h2>
+    <p>계약과 담보는 「무엇을 가졌나」이고, 여기는 <b>「얼마나 썼고 얼마나 남았나」</b>입니다.
+    가입금액에서 이미 받은 보험금을 뺀 잔여를 도넛으로 세웁니다. 단, 한도의 성격이 담보마다 달라서
+    <b>소진형·연간형·사고당형</b>을 섞지 않고 따로 그립니다.</p>
+
+    <div class="frames">
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><b style="font-size:13px">담보 여력</b><span class="pill ok">유지 17건</span></div>
+
+          <div class="glowcard"><div class="inner">
+            <span class="muted">더 청구할 수 있는 금액</span>
+            <div class="amount grad-num" style="margin:2px 0 4px">1억 471만원</div>
+            <span class="muted">이미 받은 2,829만원을 뺀 잔액 · 근거 확인된 담보만</span>
+          </div></div>
+
+          <div class="m-card">
+            <b class="m-title">소진형 — 한 번 받으면 끝</b>
+            <div class="row" style="gap:6px;margin-top:9px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="암진단비 잔여 100%">
+      <defs><linearGradient id="g95900" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#c8517f"/><stop offset="1" stop-color="#7e1e48"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g95900)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="163.4 163.4"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">100%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">암진단비</b>
+  <span class="muted" style="text-align:center;line-height:1.35">남은 5,000만 / 한도 5,000만</span>
+</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="뇌혈관진단비 잔여 0%">
+      <defs><linearGradient id="g68909" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#d9714a"/><stop offset="1" stop-color="#a33216"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g68909)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="0 163.4" stroke-opacity="0"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">0%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">뇌혈관진단비</b>
+  <span class="muted" style="text-align:center;line-height:1.35">남은 0 / 한도 2,000만</span>
+</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="수술비(1~5종) 잔여 40%">
+      <defs><linearGradient id="g7817" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e0a94a"/><stop offset="1" stop-color="#8a5a00"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g7817)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="65.3 163.4"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">40%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">수술비(1~5종)</b>
+  <span class="muted" style="text-align:center;line-height:1.35">남은 400만 / 한도 1,000만</span>
+</div>
+            </div>
+          </div>
+
+          <div class="m-card">
+            <b class="m-title">연간형 — 해가 바뀌면 다시 찬다</b>
+            <span class="muted">2026년 기준 · 12월 31일 초기화</span>
+            <div class="row" style="gap:6px;margin-top:9px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="실손 통원 잔여 88%">
+      <defs><linearGradient id="g2756" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#c8517f"/><stop offset="1" stop-color="#7e1e48"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g2756)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="143.8 163.4"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">88%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">실손 통원</b>
+  <span class="muted" style="text-align:center;line-height:1.35">올해 남은 176만 / 연 200만</span>
+</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="실손 입원 잔여 97%">
+      <defs><linearGradient id="g93767" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#c8517f"/><stop offset="1" stop-color="#7e1e48"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g93767)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="158.5 163.4"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">97%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">실손 입원</b>
+  <span class="muted" style="text-align:center;line-height:1.35">올해 남은 4,850만 / 연 5,000만</span>
+</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:82px">
+  <div style="position:relative;width:70px;height:70px">
+    <svg viewBox="0 0 70 70" width="70" height="70" role="img" aria-label="실손 처방 잔여 45%">
+      <defs><linearGradient id="g96995" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e0a94a"/><stop offset="1" stop-color="#8a5a00"/>
+      </linearGradient></defs>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="#efe1e9" stroke-width="9"/>
+      <circle cx="35" cy="35" r="26" fill="none" stroke="url(#g96995)" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="73.5 163.4"
+              transform="rotate(-90 35 35)"/>
+    </svg>
+    <b style="position:absolute;inset:0;display:grid;place-items:center;font-size:14px;letter-spacing:-.02em">45%</b>
+  </div>
+  <b style="font-size:11px;text-align:center;line-height:1.35">실손 처방</b>
+  <span class="muted" style="text-align:center;line-height:1.35">올해 남은 45만 / 연 100만</span>
+</div>
+            </div>
+          </div>
+
+          <div class="m-card row" style="gap:9px;background:var(--sub)">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7JWI7KCEIOyViOuCtCAo6rCc7J247KCV67O0KSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KCgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPGcgc3Ryb2tlPSIjZDU5ZmI3IiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CiAgICA8cGF0aCBkPSJNNTYgMTY4QzQ0IDE3NiA0MCAxODQgNDIgMTkwIi8+CiAgICA8cGF0aCBkPSJNMTYyIDE2MkMxNzYgMTYwIDE4NCAxNTQgMTg2IDE0OCIvPgogIDwvZz4KICA8IS0tIOyLneydgOuVgDog7J20IOy6kOumre2EsOydmCDsoJXssrTri6QuIO2VreyDgSDsmbzsqr0g6rSA7J6Q64aA7J207JeQ7IScIO2VmOuCmOunjCDtnZDrpbjri6QuIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM4IDk2KSBzY2FsZSguNDIpIj4KICAgIDxwYXRoIGQ9Ik00MCAwQzQwIDAgNzYgNDIgNzYgNjZBMzYgMzYgMCAwIDEgNCA2NkM0IDQyIDQwIDAgNDAgMFoiIGZpbGw9InVybCgjYi1kcm9wKSIvPgogICAgPGVsbGlwc2UgY3g9IjI3IiBjeT0iNTIiIHJ4PSIxMCIgcnk9IjgiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii41NSIvPgogIDwvZz4KICA8cGF0aCBkPSJNNzQgMTMycTE0LTE0IDI4IDAiIHN0cm9rZT0iIzNjMGMyNCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNMTE4IDEzMnExNC0xNCAyOCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTkyIDE1OHExOCAxNiAzNiAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTYwIDExMCkiPgogICAgPHBhdGggZD0iTTI0IDBsMjIgOXYxOGMwIDEzLTkgMjMtMjIgMjdDMTEgNTAgMiA0MCAyIDI3Vjl6IiBmaWxsPSJ1cmwoI2ItZHJvcCkiLz4KICAgIDxwYXRoIGQ9Ik0xNCAyNmw3IDcgMTMtMTQiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8L2c+Cjwvc3ZnPgo=" width="34" alt="" class="mascot">
+            <span class="grow" style="font-size:11px;color:var(--ink-2);line-height:1.5">
+              <b>사고당형</b>(배상책임·운전자 벌금 등)은 잔액이라는 개념이 없어 도넛 대신 「1사고당 한도」로만 적습니다.</span>
+          </div>
+        </div></div>
+        <figcaption><b>담보 여력 — 도넛</b> 채워진 호가 <strong>남은 여력</strong>. 소진된 담보는 0%로 붉게 서서
+        「이건 더 못 받는다」를 먼저 알립니다. 한도 성격이 다른 담보를 한 도넛에 섞지 않습니다.</figcaption>
+      </figure>
+
+      <figure class="frame">
+        <div class="phone"><div class="scr">
+          <div class="m-hd"><b style="font-size:13px">보험금 받은 내역</b><span class="pill">2023 – 2026</span></div>
+          <div class="m-card row" style="gap:6px;text-align:center">
+            <span class="grow"><b class="amount" style="font-size:17px">2,829만</b><br><span class="muted">누적 수령</span></span>
+            <span style="width:1px;align-self:stretch;background:var(--line)"></span>
+            <span class="grow"><b class="amount" style="font-size:17px">9건</b><br><span class="muted">지급 완료</span></span>
+            <span style="width:1px;align-self:stretch;background:var(--line)"></span>
+            <span class="grow"><b class="amount" style="font-size:17px">2건</b><br><span class="muted">미청구 의심</span></span>
+          </div>
+
+          <div class="m-card" style="padding:4px 12px 10px">
+            <div class="row" style="padding:9px 2px"><span class="grow">
+              <b style="font-size:12.5px">2026-03-14 · ○○정형외과</b>
+              <br><span class="muted">실손 통원 · 메리츠</span></span>
+              <span style="text-align:right"><b style="font-size:12.5px">+124,000</b><br><span class="pill ok">지급</span></span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">2025-11-02 · △△대학병원</b><br><span class="muted">수술비 3종 · KB</span></span><span class="muted" style="white-space:nowrap"><b style="font-size:12.5px">+2,000,000</b><br><span class="pill ok">지급</span></span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line);background:var(--alert-soft);
+                 margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:8px">
+              <span class="grow"><b style="font-size:12.5px">2024-08-21 · □□의원</b>
+              <br><span class="muted">진료기록은 있는데 청구 흔적이 없어요</span></span>
+              <span style="text-align:right"><b style="font-size:12.5px;color:var(--alert)">?</b><br><span class="pill bad">놓칠뻔</span></span></div>
+            <div class="row" style="padding:9px 2px;border-top:1px solid var(--line)"><span class="grow"><b style="font-size:12.5px">2024-05-09 · ◇◇한의원</b><br><span class="muted">실손 통원 · 메리츠</span></span><span class="muted" style="white-space:nowrap"><b style="font-size:12.5px">+38,000</b><br><span class="pill ok">지급</span></span></div>
+          </div>
+
+          <div class="m-card row" style="gap:9px">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMjAgMjI0IiB3aWR0aD0iMjIwIiBoZWlnaHQ9IjIyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLrhpPsuaDru5Qg66eI7Iqk7L2U7Yq4IOu7kOuLiCDigJQg7LC+7JWY64ukICjsp4Tri6gg7JmE66OMKSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItYm9keSIgeDE9IjI0JSIgeTE9IjYlIiB4Mj0iNzYlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI2ZkZWVmNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNGQ3ZTMiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImItZHJvcCIgeDE9IjIwJSIgeTE9IjAlIiB4Mj0iODAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2M4NTE3ZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjYTMyYTVlIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzZmMTc0MCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYi1zcGVjIiBjeD0iMzQlIiBjeT0iMjYlIiByPSIzNiUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjk1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJiLWNoZWVrIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI1MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDhiYjAiIHN0b3Atb3BhY2l0eT0iLjU1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2YwOGJiMCIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iYi1zaGFkb3ciIHg9Ii00MCUiIHk9Ii0zMCUiIHdpZHRoPSIxODAlIiBoZWlnaHQ9IjE4MCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTAiIGZsb29kLWNvbG9yPSIjM2MwYzI0IiBmbG9vZC1vcGFjaXR5PSIuMjYiLz4KICAgICAgPGZlRHJvcFNoYWRvdyBkeD0iMCIgZHk9IjIiIHN0ZERldmlhdGlvbj0iMiIgZmxvb2QtY29sb3I9IiMzYzBjMjQiIGZsb29kLW9wYWNpdHk9Ii4xOCIvPgogICAgPC9maWx0ZXI+CiAgICA8ZmlsdGVyIGlkPSJiLXNvZnQiIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CiAgICA8L2ZpbHRlcj4KICAgIDxjbGlwUGF0aCBpZD0iYi1jbGlwIj4KICAgICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIi8+CiAgICA8L2NsaXBQYXRoPgogIDwvZGVmcz4KICA8ZWxsaXBzZSBjeD0iMTEwIiBjeT0iMjEyIiByeD0iNTQiIHJ5PSI5IiBmaWxsPSIjM2MwYzI0IiBvcGFjaXR5PSIuMTMiLz4KICA8IS0tIO2MlDog66q4IOuSpOyXkOyEnCDrgpjsmKjri6QuIOyInOyEnOqwgCDrsJTrgIzrqbQg67aZ7J24IOqyg+yymOufvCDrs7Tsnbjri6QuIC0tPgogIDxnIHN0cm9rZT0iI2Q1OWZiNyIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPgogICAgPHBhdGggZD0iTTU2IDE2OEM0NCAxNzYgNDAgMTg0IDQyIDE5MCIvPgogICAgPHBhdGggZD0iTTE2NCAxNjhDMTc2IDE3NiAxODAgMTg0IDE3OCAxOTAiLz4KICA8L2c+CgogIDxnIGZpbHRlcj0idXJsKCNiLXNoYWRvdykiPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJ1cmwoI2ItYm9keSkiLz4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNiLWNsaXApIj4KICAgICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNzQiIHJ4PSIzNCIgcnk9IjI2IiBmaWxsPSJ1cmwoI2Itc3BlYykiIGZpbHRlcj0idXJsKCNiLXNvZnQpIi8+CiAgICAgIDxlbGxpcHNlIGN4PSIxMzAiIGN5PSIxODgiIHJ4PSI4MCIgcnk9IjQ2IiBmaWxsPSIjZTliY2NmIiBvcGFjaXR5PSIuNSIvPgogICAgPC9nPgogICAgPHBhdGggZD0iTTExMCAyNkMxMTAgMjYgMTc2IDk2IDE3NiAxNDBBNjYgNjYgMCAwIDEgNDQgMTQwQzQ0IDk2IDExMCAyNiAxMTAgMjZaIiBmaWxsPSJub25lIiBzdHJva2U9IiNhMzJhNWUiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgPC9nPgoKICA8ZWxsaXBzZSBjeD0iNzIiIGN5PSIxNTIiIHJ4PSIxMyIgcnk9IjgiIGZpbGw9InVybCgjYi1jaGVlaykiLz4KICA8ZWxsaXBzZSBjeD0iMTQ4IiBjeT0iMTUyIiByeD0iMTMiIHJ5PSI4IiBmaWxsPSJ1cmwoI2ItY2hlZWspIi8+CiAgPCEtLSDsi53snYDrlYA6IOydtCDsupDrpq3thLDsnZgg7KCV7LK064ukLiDtla3sg4Eg7Jm87Kq9IOq0gOyekOuGgOydtOyXkOyEnCDtlZjrgpjrp4wg7Z2Q66W464ukLiAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNiA2Mikgc2NhbGUoLjM0KSByb3RhdGUoLTI0IDQwIDY2KSI+CiAgICA8cGF0aCBkPSJNNDAgMEM0MCAwIDc2IDQyIDc2IDY2QTM2IDM2IDAgMCAxIDQgNjZDNCA0MiA0MCAwIDQwIDBaIiBmaWxsPSJ1cmwoI2ItZHJvcCkiLz4KICAgIDxlbGxpcHNlIGN4PSIyNyIgY3k9IjUyIiByeD0iMTAiIHJ5PSI4IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIuNTUiLz4KICA8L2c+CiAgPHBhdGggZD0iTTUyIDkycS04IDgtMTIgMTgiIHN0cm9rZT0iI2M5OGZhOSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiIG9wYWNpdHk9Ii43Ii8+CiAgPHBhdGggZD0iTTc0IDEyNHExNC0xNCAyOCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTExOCAxMjRxMTQtMTQgMjggMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgMjAgNDQgMCIgc3Ryb2tlPSIjM2MwYzI0IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04OCAxNTZxMjIgNiA0NCAwIiBzdHJva2U9IiMzYzBjMjQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+Cgo8L3N2Zz4K" width="36" alt="" class="mascot">
+            <span class="grow" style="font-size:11px;color:var(--ink-2);line-height:1.5">
+              심평원 진료내역과 대조해 <b>청구 흔적이 없는 방문</b>을 찾아냅니다. 이게 앱 이름의 이유예요.</span>
+          </div>
+        </div></div>
+        <figcaption><b>받은 내역 + 놓칠뻔 탐지</b> 지급 이력은 시간순으로, 그 사이에
+        <strong>「진료는 있는데 청구가 없는 날」</strong>을 끼워 넣습니다. 목록이 곧 할 일 목록이 됩니다.</figcaption>
+      </figure>
+
+      <figure class="frame" style="max-width:330px">
+        <div class="dec" style="height:100%">
+          <b class="t">이 데이터, 어디서 오나 (확인함)</b>
+          <p style="font-size:13.5px;margin-top:2px">
+          <b>❌ 한국신용정보원</b> — 계약·담보만 줍니다. CODEF 보험 카테고리에 <b>지급/수령내역 API가 없습니다.</b>
+          credit4u 상품은 계약정보와 계정관리(가입·아이디찾기·비번변경)뿐입니다.</p>
+          <p style="font-size:13.5px">
+          <b>✅ 국세청 홈택스 · 연말정산간소화</b> — 의료비 자료에 <b>실손의료보험금 수령액</b>이 들어 있습니다.
+          연 단위이고 실손에 한정되지만, 「얼마 받았나」의 공적 근거가 됩니다.</p>
+          <p style="font-size:13.5px">
+          <b>✅ 건강보험심사평가원 · 내진료정보열람</b> — 최근 <b>5년 진료·처방 내역</b>. 이걸 실손 계약과 대조하면
+          <b>청구 안 한 방문</b>이 그대로 드러납니다.</p>
+          <p style="font-size:13.5px">
+          <b>🖊 정액형(암·수술·후유장해)</b> — 공적 경로가 없어 <b>사용자 입력 + 지급안내문 촬영</b>으로 채웁니다.
+          입력이 없으면 도넛은 「미확인」 회색으로 두고 <b>추정하지 않습니다.</b></p>
+          <p class="note" style="margin-top:4px">세 경로 모두 별도 동의·별도 인증이 필요합니다.
+          계약 조회에 묶어 한 번에 받지 않고, 해당 메뉴에 처음 들어갈 때 각각 물어봅니다.</p>
+        </div>
+        <figcaption><b>근거 없는 숫자는 그리지 않는다</b> 확인된 수령액이 없는 담보는 도넛을 비우고
+        「아직 몰라요」로 표시합니다.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <section>
+    <span class="eyebrow">09 — Rules</span>
+    <h2>상태·경로 규칙</h2>
+    <div class="scroll">
+      <table class="tbl">
+        <tr><th>상태</th><th>헤더 우측 / 레일 하단</th><th>로그인 없이</th><th>로그인 후</th></tr>
+        <tr><td><b>게스트</b></td><td>「시작하기」</td><td>홈 체험(예시) · AI 체험 · 보험 상식 · 또래 분포</td><td>—</td></tr>
+        <tr><td><b>로그인+연결</b></td><td>아바타</td><td>—</td><td>내 계약·보장 맵·진단 · 또래 속 내 위치 · 가족 초대(카카오톡)</td></tr>
+      </table>
+    </div>
+    <div class="scroll">
+      <table class="tbl">
+        <tr><th>브레이크포인트</th><th>셸</th><th>본문</th></tr>
+        <tr><td class="mono">~ 1023px</td><td>플로팅 하단 탭바 (현행)</td><td>세로 1단 (현행)</td></tr>
+        <tr><td class="mono">1024px ~</td><td>좌측 레일 196px</td><td>홈·AI 2단, 보장 광폭 표, 연결은 좁은 중앙 1단 유지</td></tr>
+      </table>
+    </div>
+    <p class="note">「내 보험 조회하기」·「가족 초대」가 로그인의 유일한 관문이다. 소셜 로그인(카카오·네이버·구글) 직후
+한국신용정보원 연결로 이어진다. 연결 화면만은 데스크톱에서도 좁은 1단 — 자격증명 입력은 시선이 좁아야 안전하다.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">10 — 확정</span>
+    <h2>이번에 확정된 것</h2>
+    <div class="frames" style="gap:14px">
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">용어</b><p style="font-size:14px">사용자 문구는 <b>한국신용정보원</b> 공식 명칭. 내보험다보여는 계정 안내 괄호에서만.</p></div>
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">인증</b><p style="font-size:14px">조회 = 로그인. 소셜 3종(카카오·네이버·구글) → 신용정보원 연결. 정보 섹션은 로그인 불필요.</p></div>
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">표현</b><p style="font-size:14px">통계는 통일 규격 타일 · 차트는 그라디언트 · 화려함은 AI 결과 카드에만 집중.</p></div>
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">내 정보</b><p style="font-size:14px">굿리치 골격 채택 + <b>프로필 사진</b>(홈·레일·가족 목록 공통 반영). 판매 동선(추천플래너·상품추천) 미채택.</p></div>
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">담보 여력</b><p style="font-size:14px">소진형·연간형·사고당형을 <b>섞지 않고</b> 그린다. 채워진 호 = 남은 여력. 근거 없으면 회색 「미확인」.</p></div>
+      <div class="dec" style="flex:1;min-width:240px"><b class="t">받은 내역</b><p style="font-size:14px">신용정보원엔 <b>없음</b>. 홈택스(실손 수령액) + 심평원(5년 진료내역) + 사용자 입력의 3원 구성, 각각 별도 동의.</p></div>
+    </div>
+  </section>
+
+</div>

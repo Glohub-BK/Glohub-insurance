@@ -1,0 +1,516 @@
+<title>놓칠뻔 CI 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --paper: #f5eff2;
+    --card: #ffffff;
+    --plate: #fbf6f8;
+    --ink: #241019;
+    --ink-2: #5d4651;
+    --ink-3: #8c7480;
+    --line: #e6d5dd;
+    --brand: #a32a5e;
+    --brand-ink: #7e1e48;
+    --deep: #5c1435;
+    --soft: #fbebf2;
+    --bad: #b03a16;
+    --shadow-rgb: 60, 12, 36;
+    --e1: 0 1px 1px rgba(var(--shadow-rgb), .05), 0 4px 8px -3px rgba(var(--shadow-rgb), .1), 0 12px 22px -12px rgba(var(--shadow-rgb), .18), inset 0 1px 0 rgba(255, 255, 255, .9);
+    --e2: 0 2px 3px -1px rgba(var(--shadow-rgb), .08), 0 8px 16px -6px rgba(var(--shadow-rgb), .14), 0 24px 40px -20px rgba(var(--shadow-rgb), .22), inset 0 1px 0 rgba(255, 255, 255, .9);
+    --sans: "Pretendard", "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+
+      --paper: #150c11;
+      --card: #21141b;
+      --plate: #1b1017;
+      --ink: #f7ecf1;
+      --ink-2: #cbb1bd;
+      --ink-3: #9a8390;
+      --line: #3a2530;
+      --brand: #e0729f;
+      --brand-ink: #f0a3c3;
+      --deep: #f0a3c3;
+      --soft: #33202a;
+      --bad: #e2794f;
+      --shadow-rgb: 0, 0, 0;
+      --e1: 0 1px 1px rgba(var(--shadow-rgb), .3), 0 4px 8px -3px rgba(var(--shadow-rgb), .4), 0 12px 22px -12px rgba(var(--shadow-rgb), .5), inset 0 1px 0 rgba(255, 255, 255, .05);
+      --e2: 0 2px 3px -1px rgba(var(--shadow-rgb), .35), 0 8px 16px -6px rgba(var(--shadow-rgb), .45), 0 24px 40px -20px rgba(var(--shadow-rgb), .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #150c11;
+    --card: #21141b;
+    --plate: #1b1017;
+    --ink: #f7ecf1;
+    --ink-2: #cbb1bd;
+    --ink-3: #9a8390;
+    --line: #3a2530;
+    --brand: #e0729f;
+    --brand-ink: #f0a3c3;
+    --deep: #f0a3c3;
+    --soft: #33202a;
+    --bad: #e2794f;
+    --shadow-rgb: 0, 0, 0;
+    --e1: 0 1px 1px rgba(var(--shadow-rgb), .3), 0 4px 8px -3px rgba(var(--shadow-rgb), .4), 0 12px 22px -12px rgba(var(--shadow-rgb), .5), inset 0 1px 0 rgba(255, 255, 255, .05);
+    --e2: 0 2px 3px -1px rgba(var(--shadow-rgb), .35), 0 8px 16px -6px rgba(var(--shadow-rgb), .45), 0 24px 40px -20px rgba(var(--shadow-rgb), .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 56px 20px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 72px;
+  }
+
+  section { display: flex; flex-direction: column; gap: 20px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 6vw, 46px);
+    line-height: 1.2;
+    letter-spacing: -.03em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(21px, 3.4vw, 27px);
+    letter-spacing: -.02em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+
+  p { margin: 0; color: var(--ink-2); max-width: 64ch; }
+
+  .lede { font-size: 18px; color: var(--ink-2); }
+
+  .rule { height: 1px; background: var(--line); border: 0; margin: 0; }
+
+  .grid { display: grid; gap: 18px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--e1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .plate {
+    background: var(--plate);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--e1);
+    padding: 28px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  /* 로고의 '놓칠'은 잉크색 글자다. 어두운 테마에서 그대로 두면 사라진다.
+     자산은 항상 종이 위에 놓고 보여준다 — 실제 사용 조건과도 같다. */
+  .stage:not(.bare) {
+    background: #fdfafb;
+    border: 1px solid rgba(60, 12, 36, .09);
+    border-radius: 14px;
+    padding: 16px 12px;
+  }
+
+  .plate .stage {
+    min-height: 132px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .plate.dark { background: linear-gradient(150deg, #4b1130, #24091a); border-color: #4b1130; }
+  .plate.dark .cap, .plate.dark .cap b { color: #f3d6e3; }
+
+  /* 한글은 모노스페이스에서 글자 사이가 벌어져 읽기 나빠진다. 캡션은 본문 서체로 쓴다. */
+  .cap {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+
+  .cap b { display: block; font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: 0; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+
+  .sz-mark { height: 128px; }
+  .sz-wide { height: 74px; }
+  .sz-stack { height: 132px; }
+  .sz-icon { height: 116px; border-radius: 26px; box-shadow: var(--e2); }
+  .sz-mascot { height: 138px; }
+  .sz-mini { height: 40px; }
+  .sz-feed { height: 46px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--e1); background: var(--card); }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+  td.wrapcell { white-space: normal; min-width: 260px; color: var(--ink-2); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 12px; font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .swatch { display: flex; align-items: center; gap: 10px; }
+  .chip { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(var(--shadow-rgb), .18); flex: none; box-shadow: var(--e1); }
+
+  .rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .rules li { display: flex; gap: 10px; align-items: flex-start; color: var(--ink-2); }
+  .rules .k { flex: none; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; background: var(--brand); }
+  .rules .k.no { background: var(--bad); }
+
+  .misuse { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .misuse figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--plate); border: 1px solid var(--line); border-radius: 16px; padding: 18px 12px 14px; box-shadow: var(--e1); }
+  .misuse svg { height: 76px; }
+  .misuse figcaption { font-size: 13px; color: var(--bad); font-weight: 600; text-align: center; }
+  .x-stretch svg { transform: scaleX(1.5); }
+  .x-tilt svg { transform: rotate(-14deg); }
+  .x-hue svg { filter: hue-rotate(120deg) saturate(1.5); }
+  .x-flat svg { filter: grayscale(1) contrast(.55); opacity: .8; }
+
+  .mock {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    box-shadow: var(--e2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mock-bar {
+    background: linear-gradient(148deg, #b93a70 0%, #8c1f4e 100%);
+    color: #fff;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mock-bar .name { font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
+  .mock-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  .feed { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--plate); border: 1px solid var(--line); }
+  .feed .tag { font-family: var(--mono); font-size: 11px; color: var(--brand); letter-spacing: .08em; }
+  .feed .ttl { font-size: 15px; font-weight: 600; line-height: 1.4; }
+
+  /* 앱의 실제 스플래시와 같은 조건: 밝은 바탕. 로고의 '놓칠'이 잉크색이라
+     플럼 바탕에서는 읽히지 않는다. */
+  .splash { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 44px 20px; background: radial-gradient(120% 80% at 50% 20%, #fbebf2, #fdfafb 62%); color: #241019; }
+  .splash .tagline { font-size: 14px; color: #6b5058; }
+
+  footer { color: var(--ink-3); font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
+  code { font-family: var(--mono); font-size: 13px; background: var(--soft); color: var(--brand-ink); padding: 2px 6px; border-radius: 6px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .float { animation: bob 4.5s ease-in-out infinite; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  }
+</style>
+
+<div class="wrap">
+
+  <header style="display:flex;flex-direction:column;gap:26px">
+    <span class="eyebrow">Brand Identity · v0.1</span>
+    <div class="stage float" style="max-width:420px;display:flex;justify-content:center"><!--SVG:logo-horizontal:sz-wide--></div>
+    <h1>굿리치는 부엉이가 지켜본다.<br>놓칠뻔은 방금 흘린 식은땀이다.</h1>
+    <p class="lede">
+      마스코트가 브랜드를 대신 설명하는 대신, 사용자가 앱을 여는 순간의 감정을 그대로 형상으로 만들었다.
+      &ldquo;휴… 놓칠 뻔했네.&rdquo; 그 안도의 땀방울이 심볼이고, 방울 안에 <b>뻔</b>이 들어앉는다.
+    </p>
+  </header>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">01 — Concept</span>
+    <h2>이름 세 글자 중 하나만 도형이 된다</h2>
+    <p>‘놓칠’은 과거형 걱정이고 ‘뻔’은 모면한 순간이다. 브랜드가 파는 것은 뒤쪽이므로, 뒤쪽만 크게 만들고 도형 안에 넣었다.</p>
+    <div class="grid g3">
+      <div class="plate">
+        <div class="stage"><!--SVG:mark:sz-mark--></div>
+        <span class="cap"><b>식은땀 방울 = 심볼</b>보험을 놓칠 뻔한 순간의 생리적 반응.<br>물방울이 아니라 땀방울이라 사선으로 흐른다.</span>
+      </div>
+      <div class="plate">
+        <div class="stage" style="align-items:center"><!--SVG:logo-horizontal:sz-wide--></div>
+        <span class="cap"><b>뻐니 마지막 글자를 대체</b>워드마크에서도 ‘뻔’ 자리에 방울이 앉는다.<br>방울만 떼도 로고로 읽힌다.</span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-relief:sz-mascot--></div>
+        <span class="cap"><b>마스코트 = 심볼의 인격</b>동물을 새로 데려오지 않았다.<br>심볼이 그대로 캐릭터가 된다.</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">02 — Logo system</span>
+    <h2>다섯 벌이면 전부 커버된다</h2>
+    <p>앱 아이콘, 스플래시, 명함, 스토어 스크린샷, 흑백 인쇄. 그 이상은 만들지 않는다. 변형이 늘어나는 순간 브랜드는 흐려진다.</p>
+    <div class="grid g2">
+      <div class="plate">
+        <div class="stage"><!--SVG:mark:sz-mark--></div>
+        <span class="cap"><b>심볼 (Mark)</b>mark.svg · 최소 24px<br>파비콘 · 프로필 · 워터마크</span>
+      </div>
+      <div class="plate">
+        <div class="stage" style="align-items:center"><!--SVG:logo-horizontal:sz-wide--></div>
+        <span class="cap"><b>가로 조합 (Primary)</b>logo-horizontal.svg · 최소 폭 120px<br>앱 헤더 · 문서 · 메일 서명</span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:logo-stacked:sz-stack--></div>
+        <span class="cap"><b>세로 조합</b>logo-stacked.svg<br>배너 · 굿즈 · 정사각 광고</span>
+      </div>
+      <div class="plate">
+        <div class="stage" style="align-items:center"><!--SVG:app-icon:sz-icon--></div>
+        <span class="cap"><b>앱 아이콘</b>app-icon.svg · 512×512, 라운드 116<br>iOS 마스크에 잘리지 않도록 여백 17%</span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mark-mono:sz-mark--></div>
+        <span class="cap"><b>단색</b>mark-mono.svg<br>팩스 · 도장 · 1도 인쇄 · 음각</span>
+      </div>
+      <div class="plate dark">
+        <div class="stage" style="align-items:center"><!--SVG:app-icon:sz-icon--></div>
+        <span class="cap"><b>어두운 바탕</b>타일 가장자리 광과 방울 그림자를 유지한다.<br>어두운 배경에서 아이콘이 묻히지 않는 기준이다.</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">03 — Mascot</span>
+    <h2>뻐니 &mdash; 화면이 말을 거는 순간마다 하나씩</h2>
+    <p>포즈는 14개, 그 이상 만들지 않는다. 표정이 늘어날수록 그리는 사람마다 얼굴이 달라지고 캐릭터가 흐려진다. 새 화면에는 새 포즈를 만들지 말고 아래에서 가장 가까운 것을 고른다.</p>
+    <p>세 가지는 어떤 포즈에서도 변하지 않는다. <b>식은땀은 항상 왼쪽에 하나</b>, 소품은 항상 오른손, 몸통 실루엣은 심볼과 같은 방울.</p>
+    <div class="grid g3">
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-confident:sz-mascot--></div>
+        <span class="cap"><b>맡겨줘</b>스플래시 전용<br><span class="mono">confident</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-greet:sz-mascot--></div>
+        <span class="cap"><b>안녕하세요</b>첫 방문 · 온보딩<br><span class="mono">greet</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-relief:sz-mascot--></div>
+        <span class="cap"><b>휴…</b>기본 로딩 · 빈 화면<br><span class="mono">relief</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-search:sz-mascot--></div>
+        <span class="cap"><b>뒤지는 중</b>조회 중 · 검색 결과 없음<br><span class="mono">search</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-thinking:sz-mascot--></div>
+        <span class="cap"><b>살펴보는 중</b>진단 중 · 판단 근거<br><span class="mono">thinking</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-phone:sz-mascot--></div>
+        <span class="cap"><b>기다리는 중</b>휴대폰 인증 대기(2-way)<br><span class="mono">phone</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-sync:sz-mascot--></div>
+        <span class="cap"><b>맞추는 중</b>동기화 · 갱신 안내<br><span class="mono">sync</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-found:sz-mascot--></div>
+        <span class="cap"><b>찾았다</b>진단 성공<br><span class="mono">found</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-cheer:sz-mascot--></div>
+        <span class="cap"><b>축하해요</b>연결 완료 · 청구 완료<br><span class="mono">cheer</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-doc:sz-mascot--></div>
+        <span class="cap"><b>서류 안내</b>청구 준비물<br><span class="mono">doc</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-alert:sz-mascot--></div>
+        <span class="cap"><b>어?</b>보장 공백 · 주의<br><span class="mono">alert</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-clock:sz-mascot--></div>
+        <span class="cap"><b>시간 없어요</b>만기 · 소멸시효 3년<br><span class="mono">clock</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-shield:sz-mascot--></div>
+        <span class="cap"><b>안전해요</b>개인정보 · 보안<br><span class="mono">shield</span></span>
+      </div>
+      <div class="plate">
+        <div class="stage"><!--SVG:mascot-sorry:sz-mascot--></div>
+        <span class="cap"><b>못 찾았어요</b>해당 담보 없음 · 조회 실패<br><span class="mono">sorry</span></span>
+      </div>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>지킨다</h3>
+        <ul class="rules">
+          <li><span class="k">1</span><span>땀방울은 <b>항상 왼쪽</b>, 항상 하나. 두 개가 되면 공포가 된다.</span></li>
+          <li><span class="k">2</span><span>몸통 실루엣은 심볼과 동일한 방울. 비율을 바꾸지 않는다.</span></li>
+          <li><span class="k">3</span><span>말풍선을 쓸 때 뻐니는 <b>사실만</b> 말한다. 금액이나 지급 여부를 말하지 않는다.</span></li>
+          <li><span class="k">4</span><span>소품은 <b>오른손</b>에만. 왼쪽은 땀방울 자리라 절대 가리지 않는다.</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>안 한다</h3>
+        <ul class="rules">
+          <li><span class="k no">✕</span><span>뻐니가 상담을 권유하거나 상품을 추천하는 대사. 모집행위로 읽힌다.</span></li>
+          <li><span class="k no">✕</span><span>울거나 화내는 표정. 이 브랜드의 감정은 <b>안도</b> 하나다.</span></li>
+          <li><span class="k no">✕</span><span>심볼(플럼 방울)에 얼굴 넣기. 심볼과 마스코트는 색으로 구분한다.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">04 — Color</span>
+    <h2>딥 플럼, 그리고 경고색은 빨강이 아니다</h2>
+    <p>플럼과 빨강은 색상 거리가 가까워 나란히 두면 구분되지 않는다. 경고에는 번트오렌지를 쓴다. 앱 <code>globals.css</code> 토큰과 동일한 값이다.</p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>토큰</th><th>HEX</th><th>역할</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="swatch"><span class="chip" style="background:#a32a5e"></span><span class="mono">--brand</span></td><td class="mono">#A32A5E</td><td class="wrapcell">심볼 본색, 주요 버튼, 강조 텍스트</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:#7e1e48"></span><span class="mono">--brand-ink</span></td><td class="mono">#7E1E48</td><td class="wrapcell">밝은 바탕 위 텍스트, 아이콘</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:#5c1435"></span><span class="mono">--deep</span></td><td class="mono">#5C1435</td><td class="wrapcell">그라디언트 끝점, 방울 외곽, 그림자 색상원</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:#fbebf2"></span><span class="mono">--brand-soft</span></td><td class="mono">#FBEBF2</td><td class="wrapcell">카드 톤, 마스코트 몸통, 태그 배경</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:#b03a16"></span><span class="mono">--alert</span></td><td class="mono">#B03A16</td><td class="wrapcell">보장 공백, 청구 기한 임박</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:#7a5a00"></span><span class="mono">--warn</span></td><td class="mono">#7A5A00</td><td class="wrapcell">예시 화면 라벨, 동기화 경과 안내</td></tr>
+          <tr><td class="swatch"><span class="chip" style="background:linear-gradient(148deg,#b93a70,#8c1f4e)"></span><span class="mono">--brand-grad</span></td><td class="mono">148° #B93A70 → #8C1F4E</td><td class="wrapcell">헤더 바, 앱 아이콘 바탕, 스플래시</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">05 — Typography</span>
+    <h2>‘놓칠’과 ‘뻔’의 크기 비는 1 : 1.5</h2>
+    <p>워드마크는 Pretendard ExtraBold를 <b>아웃라인으로 고정</b>해 배포한다. SVG에 <code>font-family</code>로 남겨두면 폰트가 없는 환경에서 다른 글자체로 대체되어 CI가 무너진다.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>항목</th><th>값</th><th>이유</th></tr></thead>
+        <tbody>
+          <tr><td>서체</td><td class="mono">Pretendard ExtraBold (800)</td><td class="wrapcell">앱 본문과 같은 가족. 로고만 다른 서체를 쓰면 헤더에서 어긋난다. OFL 라이선스로 상업적 사용·재배포 가능</td></tr>
+          <tr><td>자간</td><td class="mono">-0.03 em</td><td class="wrapcell">한글 ExtraBold는 기본 자간이 넓다. 조여야 한 덩어리로 읽힌다</td></tr>
+          <tr><td>‘놓칠’ : ‘뻔’</td><td class="mono">1 : 1.5</td><td class="wrapcell">방울 높이는 글자 상자의 1.5배. 시선이 ‘뻔’에서 멈춘다</td></tr>
+          <tr><td>여백 (clear space)</td><td class="mono">방울 폭의 0.5배</td><td class="wrapcell">이보다 좁으면 다른 UI 요소와 붙어 보인다</td></tr>
+          <tr><td>최소 크기</td><td class="mono">심볼 24px / 가로형 120px</td><td class="wrapcell">이하에서는 방울 안 ‘뻔’의 획이 뭉친다</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">06 — Misuse</span>
+    <h2>하지 말 것</h2>
+    <div class="misuse">
+      <figure class="x-stretch"><!--SVG:mark--><figcaption>가로 늘이기</figcaption></figure>
+      <figure class="x-tilt"><!--SVG:mark--><figcaption>기울이기</figcaption></figure>
+      <figure class="x-hue"><!--SVG:mark--><figcaption>색상 바꾸기</figcaption></figure>
+      <figure class="x-flat"><!--SVG:mark--><figcaption>그림자 제거·평면화</figcaption></figure>
+    </div>
+    <p>입체 그림자는 장식이 아니라 이 브랜드의 규칙이다. 카드도, 방울도, 탭바도 같은 3단 그림자 체계를 쓴다. 평면으로 만들면 앱 전체와 따로 논다.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <span class="eyebrow">07 — In use</span>
+    <h2>화면에 얹으면</h2>
+    <div class="grid g2">
+      <div class="mock">
+        <div class="splash">
+          <div class="stage bare" style="min-height:0"><!--SVG:mascot-confident:sz-mascot--></div>
+          <div class="stage bare" style="min-height:0;max-width:200px"><!--SVG:logo-horizontal:sz-wide--></div>
+          <div class="tagline">우리 가족 보험, 놓치지 않게</div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="mock-bar">
+          <span style="height:28px"><!--SVG:mark:sz-mini--></span>
+          <span class="name">놓칠뻔</span>
+          <span style="margin-left:auto;font-size:13px;opacity:.85">우리집</span>
+        </div>
+        <div class="mock-body">
+          <div style="font-size:12px;letter-spacing:.06em;font-weight:600;color:var(--ink-3)">오늘의 보험 상식</div>
+          <div class="feed">
+            <span style="flex:none"><!--SVG:mascot-alert:sz-feed--></span>
+            <span>
+              <span class="tag">배상책임</span>
+              <span class="ttl">아이가 남의 물건을 깨뜨렸을 때, 부모 계약으로도 청구된다</span>
+            </span>
+          </div>
+          <div class="feed">
+            <span style="flex:none"><!--SVG:mascot-found:sz-feed--></span>
+            <span>
+              <span class="tag">실손</span>
+              <span class="ttl">대장용종 제거는 수술비 담보에서도 한 번 더 본다</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <footer>
+    <div><b style="color:var(--ink)">파일</b> <span class="mono">design/ci/</span> — mark.svg · logo-horizontal.svg · logo-stacked.svg · app-icon.svg · mark-mono.svg · mascot-{confident,greet,relief,search,thinking,phone,sync,found,cheer,doc,alert,clock,shield,sorry}.svg</div>
+    <div><b style="color:var(--ink)">재생성</b> <span class="mono">python3 design/ci/build-logo.py</span> · <span class="mono">build-mascot.py</span> — 글자 아웃라인은 <span class="mono">glyph-paths.py</span>가 Pretendard에서 직접 추출한다</div>
+    <div><b style="color:var(--ink)">확인 필요</b> 상표 출원 전 키프리스 검색(36류 보험·42류 소프트웨어), 앱스토어·구글플레이 명칭 중복, 도메인</div>
+  </footer>
+
+</div>

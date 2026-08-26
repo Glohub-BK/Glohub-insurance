@@ -19,6 +19,7 @@ function member(name: string): MemberSyncRow {
     last_policy_count: null,
     is_minor: false,
     guardian_consent_at: null,
+    avatar_updated_at: null,
   };
 }
 

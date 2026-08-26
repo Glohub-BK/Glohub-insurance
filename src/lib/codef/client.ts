@@ -38,6 +38,24 @@ export type CodefConfig = {
   clientSecret: string;
   publicKey: string;
   environment: CodefEnvironment;
+  /** 어느 환경변수에서 키를 읽었는지. 실패했을 때 어디를 고쳐야 하는지 말해주기 위해 남긴다. */
+  source: string;
+};
+
+/**
+ * 환경마다 클라이언트 정보가 다르다.
+ *
+ * CODEF 콘솔은 샌드박스 / 데모 / 정식 각각의 클라이언트 ID·시크릿을 따로 발급한다.
+ * 하나로 쓰면 환경을 바꾸는 순간 토큰 발급부터 막힌다.
+ * 공개키(RSA)는 계정당 하나라 공통으로 쓴다.
+ *
+ * 환경별 변수를 먼저 보고, 없으면 접두어 없는 값으로 떨어진다 —
+ * 한 환경만 쓰는 동안에는 CODEF_CLIENT_ID 하나로도 굴러가야 한다.
+ */
+const CLIENT_PREFIX: Record<CodefEnvironment, string> = {
+  sandbox: 'CODEF_SANDBOX',
+  demo: 'CODEF_DEMO',
+  api: 'CODEF_API',
 };
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): CodefConfig {
@@ -45,13 +63,34 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): CodefConfig
   if (!(environment in BASE_URL)) {
     throw new Error(`CODEF_ENV 값이 올바르지 않습니다: ${environment}`);
   }
-  const clientId = env.CODEF_CLIENT_ID;
-  const clientSecret = env.CODEF_CLIENT_SECRET;
+
+  const prefix = CLIENT_PREFIX[environment];
+  const scopedId = env[`${prefix}_CLIENT_ID`];
+  const scopedSecret = env[`${prefix}_CLIENT_SECRET`];
+  const scoped = Boolean(scopedId && scopedSecret);
+
+  const clientId = scopedId || env.CODEF_CLIENT_ID;
+  const clientSecret = scopedSecret || env.CODEF_CLIENT_SECRET;
   const publicKey = env.CODEF_PUBLIC_KEY;
-  if (!clientId || !clientSecret || !publicKey) {
-    throw new Error('CODEF_CLIENT_ID / CODEF_CLIENT_SECRET / CODEF_PUBLIC_KEY 가 필요합니다.');
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      `${environment} 환경의 클라이언트 정보가 없습니다. ` +
+        `${prefix}_CLIENT_ID / ${prefix}_CLIENT_SECRET 를 넣거나, ` +
+        `이 환경만 쓸 거라면 CODEF_CLIENT_ID / CODEF_CLIENT_SECRET 에 ${environment} 키를 넣으세요.`,
+    );
   }
-  return { clientId, clientSecret, publicKey, environment };
+  if (!publicKey) {
+    throw new Error('CODEF_PUBLIC_KEY 가 필요합니다. 공개키는 환경과 무관하게 계정당 하나입니다.');
+  }
+
+  return {
+    clientId,
+    clientSecret,
+    publicKey,
+    environment,
+    source: scoped ? `${prefix}_CLIENT_ID` : 'CODEF_CLIENT_ID',
+  };
 }
 
 /**
@@ -121,6 +160,11 @@ export class CodefClient {
   /** CODEF 응답 본문은 URL 인코딩된 JSON 문자열이다. */
   private async request<T>(path: string, payload: Record<string, unknown>): Promise<CodefResponse<T>> {
     const token = await this.getAccessToken();
+
+    // 어디로 나갔는지 로그에 남긴다. "설정은 데모인데 결과는 샌드박스" 를 눈으로
+    // 확인할 방법이 없으면 추측만 하게 된다. 자격증명은 절대 싣지 않는다.
+    console.info(`[codef] → ${this.baseUrl}${path} (env=${this.config.environment})`);
+
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
@@ -135,7 +179,12 @@ export class CodefClient {
       this.token = null;
       throw new CodefError('UNAUTHORIZED', '토큰이 만료되었습니다. 다시 시도하세요.');
     }
-    return parseCodefBody<T>(text);
+    const body = parseCodefBody<T>(text);
+    const code = (body as { result?: { code?: string; message?: string } }).result;
+    console.info(
+      `[codef] ← ${res.status} code=${code?.code ?? '?'} message=${(code?.message ?? '').slice(0, 60)}`,
+    );
+    return body;
   }
 
   /**
