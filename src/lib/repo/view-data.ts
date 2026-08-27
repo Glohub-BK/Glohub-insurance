@@ -138,6 +138,9 @@ export async function getCandidateView(): Promise<CandidateView> {
       memberName: r.memberName,
       insurerName: r.insurerName,
       productName: r.productName,
+      // 이 줄이 빠져 있었다. 계약 종류가 없으면 excludeKinds 가 라이브 데이터에서
+      // 전혀 작동하지 않아, 자동차 담보 걸러내기가 이름 정규식에만 매달리게 된다.
+      contractKind: r.contractKind,
       category: r.category,
       name: r.name,
       amount: r.amount === null ? null : Number(r.amount),

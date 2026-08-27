@@ -37,6 +37,16 @@ export type IncidentRule = {
    * 면책"이라고 적혀 있는데도.
    */
   excludeKinds?: string[];
+  /**
+   * 이름이 이 패턴에 맞으면 exclude·excludeKinds 를 무시하고 살린다.
+   *
+   * 일상생활배상책임은 이름에 「(대인·대물)」이 붙거나, 운전자·자동차보험
+   * (contract_kind 'car')의 특약으로 들어오는 경우가 흔하다. 자동차 담보를
+   * 걸러내려던 exclude 가 정작 일배책까지 지워서 「아이가 물건 파손」에
+   * "담보 없음" 이 나왔다 — 실제로 일배책을 가진 사용자가 겪은 일이다.
+   * 걸러내기(exclude)보다 살리기(allow)가 항상 이긴다.
+   */
+  allowDespiteExclusion?: RegExp;
   headline: string;
   lead: string;
   note: string;
@@ -56,6 +66,7 @@ export const INCIDENT_RULES: IncidentRule[] = [
     direct: /배상책임|일상생활|가족일상|자녀배상|파손/,
     exclude: /자동차|차량|운전|자차|대인|대물/,
     excludeKinds: ['car', 'savings'],
+    allowDespiteExclusion: /일상생활|가족일상|자녀배상/,
     headline: '청구 가능성 높음',
     lead: '남의 물건을 망가뜨린 사고는 배상책임 담보로 처리합니다.',
     note: '자녀 본인 계약이 없어도, 부모 계약의 이 특약은 주민등록상 동거 가족을 함께 보장하는 것이 일반적입니다. 자녀 이름으로 담보가 없다고 포기하지 마세요.',
@@ -135,6 +146,7 @@ export const INCIDENT_RULES: IncidentRule[] = [
     direct: /배상책임|일상생활|급배수|누출|누수|주택|화재|가재|재물/,
     excludeKinds: ['car', 'savings'],
     exclude: /자동차|차량|운전|대인/,
+    allowDespiteExclusion: /일상생활|가족일상|급배수/,
     headline: '가해자 보험을 먼저 확인하세요',
     lead: '윗집 누수 피해는 윗집의 일상생활배상책임에서 나옵니다. 우리 계약이 아니라 상대 계약이 먼저입니다.',
     note: '우리 계약에 화재·재물 담보가 있어도 누수는 화재담보 대상이 아닙니다. 다만 급배수시설 누출 손해 특약이 붙어 있으면 우리 보험으로도 가능합니다.',
@@ -239,14 +251,22 @@ export function matchIncident(text: string, candidates: CoverageCandidate[]): Ma
   const { rule } = picked;
   const order = new Map(rule.categories.map((c, i) => [c, i]));
 
+  // 이름이 allow 패턴에 맞으면 어떤 제외 규칙도 이기지 못한다.
+  // 「일상생활중배상책임(대인·대물)」이 '대물' 에 걸려 사라지는 일을 막는다.
+  const allowed = (c: CoverageCandidate) =>
+    Boolean(rule.allowDespiteExclusion?.test(squash(c.name)));
+
   const inScope = candidates
     .filter((c) => order.has(c.category))
     .filter((c) => !ACTIVE_STATUSES_EXCLUDED.includes(c.coverageStatus))
     // 이름이 이 사고와 명백히 무관하면 목록에 올리지 않는다.
     // 감기로 통원했는데 암진단비까지 나열되던 게 여기서 걸러진다.
-    .filter((c) => !(rule.exclude && rule.exclude.test(squash(c.name))))
+    .filter((c) => allowed(c) || !(rule.exclude && rule.exclude.test(squash(c.name))))
     // 계약 종류로도 거른다. 자동차보험 담보를 일상 사고에 붙이면 안 된다.
-    .filter((c) => !(rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind)));
+    // 단, 자동차보험에 특약으로 붙은 일상생활배상책임은 allow 가 살린다.
+    .filter(
+      (c) => allowed(c) || !(rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind)),
+    );
 
   const decorated = dedupe(inScope).map((c) => {
     const basis = amountBasisOf(c.name, c.category);
@@ -287,6 +307,61 @@ export function matchIncident(text: string, candidates: CoverageCandidate[]): Ma
  * 같은 계약의 같은 담보가 두 줄로 오는 경우가 있다(대상기관이 갱신 이력을 그대로 준다).
  * 화면에 같은 카드를 두 번 세우면 "두 건 청구할 수 있다"로 읽힌다.
  */
+/** 담보 하나가 결과에서 어디로 갔는지. 화면이 아니라 진단 도구가 읽는다. */
+export type CoverageFate =
+  | 'direct' // 직접 해당으로 표시됨
+  | 'related' // 참고 목록으로 밀림 (direct 패턴 불일치)
+  | 'cause-mismatch' // 사고 원인(상해/질병)과 상충해 참고로 밀림
+  | 'excluded-name' // 이름이 exclude 패턴에 걸림
+  | 'excluded-kind' // 계약 종류가 excludeKinds 에 걸림
+  | 'excluded-status' // 해지·소멸·실효
+  | 'out-of-category'; // 이 규칙이 보는 카테고리가 아님
+
+export type MatchExplanation = {
+  ruleId: string | null;
+  rows: { candidate: CoverageCandidate; fate: CoverageFate; detail: string }[];
+};
+
+/**
+ * matchIncident 와 같은 판정을 담보마다 이유와 함께 되돌려준다.
+ *
+ * "일배책이 있는데 왜 담보 없음이냐" 는 물음에 코드를 열지 않고 답하기 위한 도구다.
+ * 판정 순서는 matchIncident 와 동일해야 하며, 어긋나면 테스트가 잡는다.
+ */
+export function explainMatch(text: string, candidates: CoverageCandidate[]): MatchExplanation {
+  const picked = pickRule(text);
+  if (!picked) return { ruleId: null, rows: [] };
+  const { rule } = picked;
+  const order = new Map(rule.categories.map((c, i) => [c, i]));
+  const cause = causeOf(text);
+
+  const rows = candidates.map((c) => {
+    const name = squash(c.name);
+    const allowed = Boolean(rule.allowDespiteExclusion?.test(name));
+    const fate: { fate: CoverageFate; detail: string } = (() => {
+      if (!order.has(c.category))
+        return { fate: 'out-of-category', detail: `카테고리 ${c.category} 는 이 규칙 대상이 아님` };
+      if (ACTIVE_STATUSES_EXCLUDED.includes(c.coverageStatus))
+        return { fate: 'excluded-status', detail: `상태 ${c.coverageStatus}` };
+      if (!allowed && rule.exclude && rule.exclude.test(name))
+        return { fate: 'excluded-name', detail: `이름이 제외 패턴 ${rule.exclude} 에 걸림` };
+      if (!allowed && rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind))
+        return { fate: 'excluded-kind', detail: `계약 종류 ${c.contractKind}` };
+      if (!rule.direct.test(name))
+        return { fate: 'related', detail: `직접 패턴 ${rule.direct} 불일치 → 참고 목록` };
+      if (contradictsCause(c.name, cause))
+        return { fate: 'cause-mismatch', detail: `사고 원인(${cause})과 상충 → 참고 목록` };
+      return {
+        fate: 'direct',
+        detail: allowed ? 'allow 패턴이 제외 규칙을 이기고 살림' : '직접 해당',
+      };
+    })();
+    return { candidate: c, ...fate };
+  });
+
+  return { ruleId: rule.id, rows };
+}
+
 function dedupe(items: CoverageCandidate[]): CoverageCandidate[] {
   const seen = new Set<string>();
   const out: CoverageCandidate[] = [];

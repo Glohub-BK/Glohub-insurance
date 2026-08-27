@@ -19,6 +19,7 @@
     "terms:import": "tsx scripts/import-terms.ts",
     "codef:ping": "tsx scripts/codef-ping.ts",
     "db:purge-sandbox": "tsx scripts/purge-sandbox.ts",
+    "match:why": "tsx scripts/match-why.ts",
     "db:last-sync": "tsx scripts/last-sync.ts",
     "db:compare-runs": "tsx scripts/compare-runs.ts",
     "db:repair-amounts": "tsx scripts/repair-amounts.ts",

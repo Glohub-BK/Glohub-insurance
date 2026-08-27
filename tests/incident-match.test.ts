@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   daysUntilExpiry,
+  explainMatch,
   matchIncident,
   pickRule,
   scoreRule,
@@ -304,5 +305,82 @@ describe('daysUntilExpiry — 소멸시효 3년', () => {
   it('마감 하루 전이면 1', () => {
     const d = daysUntilExpiry(new Date(Date.UTC(2023, 5, 10)), new Date(Date.UTC(2026, 5, 9)));
     expect(d).toBe(1);
+  });
+});
+
+describe('allowDespiteExclusion — 일배책이 자동차 제외 규칙에 지워지지 않는다', () => {
+  // 실사용에서 나온 회귀: 일배책을 가진 사용자가 「아이가 물건 파손」을 넣었는데
+  // "담보 없음" 이 나왔다. 자동차 담보를 걸러내려던 exclude 가 일배책까지 지운 것.
+  const TEXT = '아이가 물건 파손을 했어요';
+
+  it('이름에 (대인·대물) 이 붙은 일배책이 살아남는다', () => {
+    const r = matchIncident(TEXT, [cov({ name: '가족일상생활중배상책임(대인·대물)' })]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(false);
+    expect(r.coverages.map((c) => c.name)).toContain('가족일상생활중배상책임(대인·대물)');
+  });
+
+  it('운전자보험(car) 특약으로 들어온 일배책도 살아남는다', () => {
+    const r = matchIncident(TEXT, [
+      cov({ name: '일상생활배상책임', contractKind: 'car', productName: '참좋은운전자보험' }),
+    ]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(false);
+  });
+
+  it('자동차보험 대물배상은 여전히 나오지 않는다 — 이전 수정의 회귀 방지', () => {
+    const r = matchIncident(TEXT, [
+      cov({ name: '대물배상', contractKind: 'car', productName: 'KB다이렉트개인용자동차보험' }),
+    ]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.coverages).toHaveLength(0);
+    expect(r.related).toHaveLength(0);
+    expect(r.noCoverage).toBe(true);
+  });
+
+  it('누수 사고에서도 (대인) 붙은 일배책이 살아남는다', () => {
+    const r = matchIncident('윗집 누수로 벽지가 젖었어요', [
+      cov({ name: '일상생활중배상책임(대인·대물)' }),
+    ]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(false);
+  });
+});
+
+describe('explainMatch — 판정 이유를 담보마다 되돌려준다', () => {
+  const TEXT = '아이가 물건 파손을 했어요';
+  const MIXED: CoverageCandidate[] = [
+    cov({ name: '가족일상생활중배상책임(대인·대물)' }),
+    cov({ name: '대물배상', contractKind: 'car' }),
+    cov({ name: '골절진단비', category: 'diagnosis' }),
+    cov({ name: '배상책임보장', coverageStatus: '해지' }),
+  ];
+
+  it('각 담보의 운명과 이유를 말한다', () => {
+    const ex = explainMatch(TEXT, MIXED);
+    expect(ex.ruleId).toBe('liability-damage');
+    const fateOf = (name: string) => ex.rows.find((r) => r.candidate.name === name)?.fate;
+    expect(fateOf('가족일상생활중배상책임(대인·대물)')).toBe('direct');
+    expect(fateOf('대물배상')).toBe('excluded-name');
+    expect(fateOf('골절진단비')).toBe('out-of-category');
+    expect(fateOf('배상책임보장')).toBe('excluded-status');
+  });
+
+  it('matchIncident 와 판정이 어긋나지 않는다 — 어긋나면 진단 도구가 거짓말을 한다', () => {
+    for (const text of ['아이가 물건 파손을 했어요', '윗집 누수로 벽지가 젖었어요', '감기로 병원 다녀왔어요']) {
+      const m = matchIncident(text, MIXED);
+      const ex = explainMatch(text, MIXED);
+      if (m.kind !== 'matched') continue;
+      const directNames = new Set(m.coverages.map((c) => c.name));
+      // dedupe 로 합쳐진 이름까지 고려해, direct 판정 이름 집합이 일치해야 한다.
+      const explainedDirect = new Set(
+        ex.rows.filter((r) => r.fate === 'direct').map((r) => r.candidate.name),
+      );
+      expect(explainedDirect).toEqual(directNames);
+    }
+  });
+
+  it('규칙이 안 잡히는 문장은 빈 결과', () => {
+    expect(explainMatch('오늘 날씨 좋다', MIXED)).toEqual({ ruleId: null, rows: [] });
   });
 });
