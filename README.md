@@ -144,6 +144,50 @@ LLM 은 나중에 규칙이 못 잡은 문장을 넘겨받는 자리에 붙인�
 
 **금액을 계산하지 않는다.** 약관에 적힌 한도만 옮기고, 청구를 대신 접수하지 않는다.
 
+## 배포 (Vercel)
+
+레포를 Vercel 에 연결하면 `git push` 만으로 배포된다. 별도 배포 명령은 없다.
+
+```
+main 브랜치 push  →  Vercel 이 npm run build  →  프로덕션 반영
+그 외 브랜치 push →  미리보기 URL 생성
+```
+
+### 처음 한 번만
+
+1. **Vercel 에서 GitHub 저장소 Import** — 프레임워크는 Next.js 로 자동 인식된다.
+   빌드 명령·출력 폴더는 손대지 않는다.
+2. **Environment Variables 등록** (Production / Preview 둘 다). `.env.example` 참고.
+
+   | 키 | 값 |
+   |---|---|
+   | `DATABASE_URL` | Supabase **Transaction pooler (포트 6543)** |
+   | `CODEF_ENV` | `demo` 또는 `api` |
+   | `CODEF_DEMO_CLIENT_ID` / `_SECRET` | 데모 키 |
+   | `CODEF_PUBLIC_KEY` | 계정 공통 (줄바꿈 없이 한 줄) |
+   | `CODEF_ALLOW_LIVE` | `true` |
+   | `CODEF_DAILY_LIMIT` | `100` |
+
+   ⚠ **포트 6543(Transaction pooler)** 이어야 한다. 5432(Session pooler)를 쓰면 서버리스
+   인스턴스마다 직접 연결이 쌓여 Supabase 연결 상한을 넘긴다. 로컬 스크립트(`npm run db:*`)는
+   반대로 5432 를 쓴다.
+
+3. **마이그레이션은 배포와 별개다.** Supabase SQL Editor 에서 `db/migrations/*.sql` 을
+   순서대로 실행한 뒤 `npm run db:baseline` 으로 적용 이력을 기록한다.
+
+### 서버리스에서 조심할 것 (이미 코드에 반영됨)
+
+- `pdfjs-dist` 는 `serverExternalPackages` + `outputFileTracingIncludes` 로 함수 번들에
+  같이 싣는다. 둘 중 하나만 하면 **배포한 뒤에만** 약관 업로드가 깨진다.
+- 약관 업로드 라우트는 `maxDuration = 60`. 기본 10초로는 두꺼운 약관에서 잘린다.
+- DB 풀은 서버리스에서 인스턴스당 1 연결(`src/lib/db.ts`).
+
+### 배포 전 점검
+
+```bash
+npm run typecheck && npm run lint && npm test && npm run build
+```
+
 ## 남은 작업
 
 - 동기화 UI (2-way 인증 진행 화면) — 현재는 커넥터만 구현

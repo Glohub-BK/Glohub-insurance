@@ -10,6 +10,13 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
+ * 약관 PDF 는 수백 페이지짜리도 있다. 서버리스 기본 제한(10초)으로는 두꺼운 약관에서
+ * 조항을 다 뽑기 전에 잘린다. 사용자에게는 "올렸는데 아무 일도 안 일어남" 으로 보인다.
+ * Vercel Hobby 플랜의 상한이 60초다.
+ */
+export const maxDuration = 60;
+
+/**
  * 약관 파일 업로드.
  *
  * 서버 액션이 아니라 라우트 핸들러인 이유: 서버 액션 본문은 기본 1MB 로 잘린다.

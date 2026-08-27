@@ -309,9 +309,11 @@ export default async function ProfilePage() {
       </Card>
 
       <Card className="!p-0">
-        <GroupTitle>약관 및 정책</GroupTitle>
-        <Row title="회사 소개" sub="글로허브" right={SOON} />
-        <Row title="알아두실 사항" sub="놓칠뻔은 보험금 산정·청구 대행을 하지 않습니다" right={SOON} />
+        {/* 굿리치와 같은 자리, 같은 깊이. 문서 다섯 개를 여기 다 펼치면 위쪽의
+            담보 여력·TOP5 같은 핵심 메뉴가 스크롤 아래로 밀린다. 한 줄로 접는다. */}
+        <Row title="약관 및 정책" href="/legal" sub="이용약관 · 개인정보 · 위치 · 청소년보호" />
+        <Row title="알아두실 사항" href="/legal/notice" sub="놓칠뻔은 보험금 산정·청구 대행을 하지 않습니다" />
+        <Row title="회사 소개" href="/about" sub="글로버브" />
         <Row title="내 데이터 내려받기" right={<span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>JSON</span>} />
         <Row
           title="계정과 모든 데이터 삭제"

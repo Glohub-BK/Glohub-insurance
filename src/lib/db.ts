@@ -39,9 +39,16 @@ export function getPool(): Pool {
     if (!connectionString) {
       throw new Error('DATABASE_URL 이 설정되지 않았습니다. .env.local 을 확인하세요.');
     }
+    // 서버리스(Vercel)에서는 요청마다 다른 인스턴스가 뜨고, 인스턴스마다 풀이 하나씩
+    // 생긴다. max 를 5로 두면 동시 요청 20건에 연결 100개가 열려 Supabase 상한을
+    // 넘긴다. 그래서 서버리스에서는 인스턴스당 1개만 쓰고, 놀고 있는 연결은 빨리 놓는다.
+    // (DATABASE_URL 은 Supabase Transaction pooler — 포트 6543 — 를 가리켜야 한다)
+    const serverless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+
     globalThis.__insurancePool = new Pool({
       connectionString,
-      max: 5,
+      max: serverless ? 1 : 5,
+      idleTimeoutMillis: serverless ? 10_000 : 30_000,
       ssl: sslOptionsFor(connectionString, process.env.DATABASE_CA_CERT),
     });
   }

@@ -80,6 +80,9 @@ export function ConnectFlow({
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState({ id: false, pw: false });
+  // 필수 동의. 실제로 데이터를 받아오기 직전에 묻는다 — 앱을 처음 열 때 물으면
+  // 아직 뭘 하는 앱인지 모르는 상태에서 동의부터 시키는 꼴이 된다.
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [twoWay, setTwoWay] = useState<TwoWayInfo | null>(null);
@@ -132,7 +135,7 @@ export function ConnectFlow({
   const idError = touched.id ? validateLoginId(loginId) : null;
   const pwError = touched.pw ? validatePassword(password) : null;
   const ready =
-    ID_RULE.test(loginId) && validatePassword(password) === null && password.length > 0;
+    agreed && ID_RULE.test(loginId) && validatePassword(password) === null && password.length > 0;
 
   if (step === 'waiting') {
     return (
@@ -326,6 +329,33 @@ export function ConnectFlow({
             </li>
           ))}
         </ul>
+      </Card>
+
+      {/* 필수 동의. 조회 버튼을 누르기 직전에 둔다 — 무엇에 동의하는지가 가장 분명한 자리다. */}
+      <Card>
+        <label className="flex cursor-pointer items-start gap-2.5">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 size-[20px] flex-none accent-[var(--brand)]"
+          />
+          <span className="text-[15px] leading-relaxed">
+            <b className="font-semibold">[필수]</b>{' '}
+            <Link href="/legal/service" className="underline underline-offset-2" style={{ color: 'var(--brand-ink)' }}>
+              이용약관
+            </Link>
+            {' 및 '}
+            <Link href="/legal/privacy" className="underline underline-offset-2" style={{ color: 'var(--brand-ink)' }}>
+              개인정보처리방침
+            </Link>
+            에 동의합니다.
+          </span>
+        </label>
+        <p className="mt-2.5 text-[14px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+          한국신용정보원 조회는 <b className="font-semibold">주식회사 쿠콘</b>에 위탁하여 처리합니다.
+          놓칠뻔은 보험금을 산정하거나 청구를 대행하지 않습니다.
+        </p>
       </Card>
 
       {error ? <ErrorNote>{error}</ErrorNote> : null}
