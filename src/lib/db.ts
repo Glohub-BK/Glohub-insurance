@@ -33,6 +33,52 @@ export function sslOptionsFor(connectionString: string, caCert?: string) {
   return { rejectUnauthorized: false };
 }
 
+/**
+ * 연결 문자열의 **비밀번호를 뺀** 요약.
+ *
+ * 배포된 곳의 DATABASE_URL 은 눈으로 볼 수 없다(Vercel Secret 은 저장 후 열람 불가).
+ * 그래서 인증 실패가 나면 "무엇이 틀렸는지" 를 확인할 방법이 없어 왕복이 길어진다.
+ * 연결 대상만 한 줄로 남겨 그 왕복을 끊는다.
+ *
+ * ⚠ 비밀번호는 어떤 경우에도 이 문자열에 들어가지 않는다. 로그는 남는다.
+ */
+export function describeConnection(connectionString: string): string {
+  let url: URL;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    return 'DATABASE_URL 을 URL 로 해석하지 못했습니다 — 형식을 확인하세요';
+  }
+  const user = safeDecode(url.username) || '(없음)';
+  const database = url.pathname.replace(/^\//, '') || '(없음)';
+  const port = url.port || '(기본값)';
+  return `user=${user} host=${url.hostname} port=${port} db=${database}`;
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Supabase 는 pooler 로 붙을 때 사용자명이 `postgres.<프로젝트ref>` 여야 한다.
+ * 그냥 `postgres` 로 보내면 비밀번호가 맞아도 28P01 로 떨어진다 —
+ * Direct connection 문자열을 그대로 붙여넣었을 때 생기는 일이라 흔하다.
+ */
+export function poolerUserLooksWrong(connectionString: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    return false;
+  }
+  if (!url.hostname.includes('pooler.supabase.com')) return false;
+  return !safeDecode(url.username).includes('.');
+}
+
 export function getPool(): Pool {
   if (!globalThis.__insurancePool) {
     const connectionString = process.env.DATABASE_URL;
@@ -44,6 +90,15 @@ export function getPool(): Pool {
     // 넘긴다. 그래서 서버리스에서는 인스턴스당 1개만 쓰고, 놀고 있는 연결은 빨리 놓는다.
     // (DATABASE_URL 은 Supabase Transaction pooler — 포트 6543 — 를 가리켜야 한다)
     const serverless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+
+    // 인스턴스당 한 번만 찍힌다. 비밀번호는 들어가지 않는다.
+    console.info('[db] 연결 대상', describeConnection(connectionString));
+    if (poolerUserLooksWrong(connectionString)) {
+      console.error(
+        '[db] pooler 주소인데 사용자명에 프로젝트 ref 가 없습니다. ' +
+          'Supabase Connect → Transaction pooler 의 문자열을 쓰세요 (postgres.<프로젝트ref> 형식).',
+      );
+    }
 
     globalThis.__insurancePool = new Pool({
       connectionString,
