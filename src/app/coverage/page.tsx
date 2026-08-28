@@ -1,11 +1,12 @@
 import { CORE_CATEGORIES } from '@/lib/repo/dashboard';
 import { getHouseholdView } from '@/lib/repo/view-data';
 import { CATEGORY_LABELS } from '@/lib/domain/coverage-category';
-import { Card, Disclaimer, Pill, SectionTitle, Won, shortWon } from '../_components/ui';
+import { Card, Disclaimer, SectionTitle, shortWon } from '../_components/ui';
 import { isSaneTotal } from '@/lib/domain/coverage-basis';
 import { ConnectCard, PreviewNotice } from '../_components/connect';
 import { DataSourceNotice } from '../_components/data-source';
 import { DataErrorCard } from '../_components/data-error';
+import { PolicyList, type PolicyGroupData } from './policy-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,13 +26,6 @@ const KIND_LABEL: Record<string, string> = {
   savings: '저축성',
   unknown: '미분류',
 };
-
-function statusTone(status: string) {
-  if (status === '유지') return 'ok' as const;
-  if (status === '만기') return 'grey' as const;
-  if (status === '미상') return 'warn' as const;
-  return 'bad' as const;
-}
 
 export default async function CoveragePage() {
   const { mode, dataEnvironment, members, matrix, policies, coverages } = await getHouseholdView();
@@ -69,52 +63,30 @@ export default async function CoveragePage() {
     list.sort((a, b) => Number(b.premium ?? 0) - Number(a.premium ?? 0));
   }
 
-  function renderPolicy(p: (typeof policies)[number]) {
-    const cov = covByPolicy.get(p.id) ?? [];
-    const cats = Array.from(new Set(cov.map((c) => c.category)));
-    return (
-      <Card key={p.id} className="flex flex-col gap-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <span className="min-w-0">
-            <b className="block text-[16px] leading-snug">{p.product_name}</b>
-            <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
-              {p.insurer_name} · {p.member_name}
-            </span>
-          </span>
-          <span className="flex-none text-right">
-            <Won value={p.premium === null ? null : Number(p.premium)} className="text-[16px] font-bold" />
-            {p.payment_cycle ? (
-              <span className="block text-[14px]" style={{ color: 'var(--ink-3)' }}>
-                {p.payment_cycle}
-              </span>
-            ) : null}
-          </span>
-        </div>
+  // 클라이언트 토글에 넘길 직렬화 데이터. 유형 순서는 내보험다보여를 따르고,
+  // 만기·해지는 마지막 탭으로 — 과거 기록이지 지금의 보장이 아니다.
+  const toCard = (p: (typeof policies)[number]) => ({
+    id: p.id,
+    productName: p.product_name,
+    insurerName: p.insurer_name,
+    memberName: p.member_name,
+    premium: p.premium === null ? null : Number(p.premium),
+    paymentCycle: p.payment_cycle,
+    status: p.status,
+    start: p.start_date,
+    end: p.end_date,
+    termsCount: Number(p.terms_doc_count),
+    cats: Array.from(new Set((covByPolicy.get(p.id) ?? []).map((c) => CATEGORY_LABELS[c.category]))),
+  });
 
-        <div className="flex flex-wrap gap-1.5">
-          <Pill tone={statusTone(p.status)}>{p.status}</Pill>
-          {cats.slice(0, 3).map((c) => (
-            <Pill key={c}>{CATEGORY_LABELS[c]}</Pill>
-          ))}
-          {cats.length > 3 ? <Pill>+{cats.length - 3}</Pill> : null}
-        </div>
-
-        <div
-          className="flex items-center justify-between gap-2 border-t pt-2.5 text-[14px]"
-          style={{ borderColor: 'var(--line)', color: 'var(--ink-2)' }}
-        >
-          <span className="tnum">
-            {p.start_date ?? '?'} ~ {p.end_date ?? '종신'}
-          </span>
-          {Number(p.terms_doc_count) > 0 ? (
-            <Pill tone="ok">약관 {p.terms_doc_count}건</Pill>
-          ) : (
-            <Pill tone="warn">약관 미수집</Pill>
-          )}
-        </div>
-      </Card>
-    );
-  }
+  const groups: PolicyGroupData[] = [
+    ...KIND_ORDER.map((kind) => ({
+      key: kind,
+      label: KIND_LABEL[kind],
+      policies: (activeByKind.get(kind) ?? []).map(toCard),
+    })),
+    { key: 'inactive', label: '만기·해지', policies: inactivePolicies.map(toCard) },
+  ];
 
   return (
     <>
@@ -203,49 +175,9 @@ export default async function CoveragePage() {
         계약 목록
       </SectionTitle>
 
-      {policies.length === 0 ? (
-        <Card>
-          <p className="text-center text-[15px]" style={{ color: 'var(--ink-3)' }}>
-            아직 수집된 계약이 없습니다.
-          </p>
-        </Card>
-      ) : (
-        <>
-          {/* 유지 계약을 내보험다보여 유형 순서로 묶는다. 유형 안에서는 보험료 큰 순. */}
-          {KIND_ORDER.filter((k) => (activeByKind.get(k)?.length ?? 0) > 0).map((kind) => (
-            <section key={kind} className="flex flex-col gap-[14px]">
-              <h3 className="mt-1 flex items-baseline gap-2 text-[16px] font-bold">
-                {KIND_LABEL[kind]}
-                <span className="text-[14px] font-medium" style={{ color: 'var(--ink-3)' }}>
-                  {activeByKind.get(kind)!.length}건
-                </span>
-              </h3>
-              {activeByKind.get(kind)!.map((p) => renderPolicy(p))}
-            </section>
-          ))}
-
-          {/* 만기·해지 이력은 접어둔다. 지금의 보장이 아니라 과거 기록이다. */}
-          {inactivePolicies.length > 0 ? (
-            <details className="group">
-              <summary
-                className="card card-tap flex cursor-pointer items-center justify-between gap-3 text-[15px] font-semibold"
-                style={{ color: 'var(--ink-2)' }}
-              >
-                만기·해지된 계약 {inactivePolicies.length}건 보기
-                <span
-                  className="text-[13px] font-medium group-open:hidden"
-                  style={{ color: 'var(--ink-3)' }}
-                >
-                  펼치기
-                </span>
-              </summary>
-              <div className="mt-[14px] flex flex-col gap-[14px]">
-                {inactivePolicies.map((p) => renderPolicy(p))}
-              </div>
-            </details>
-          ) : null}
-        </>
-      )}
+      {/* 유형 칩 토글 — 한 번에 한 유형만 펼친다. 세로로 전부 나열하면
+          계약 열 건에 화면이 한없이 길어진다. */}
+      <PolicyList groups={groups} />
 
       {preview ? <ConnectCard /> : null}
 
