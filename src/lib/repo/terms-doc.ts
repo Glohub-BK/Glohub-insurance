@@ -97,6 +97,32 @@ function stripNul(text: string | null): string | null {
   return text === null ? null : text.replace(/\u0000/g, '');
 }
 
+/**
+ * 조항 일괄 삽입.
+ *
+ * KB 약관은 조항이 수천 개다. 한 줄씩 INSERT 하면 pooler 왕복이 조항 수만큼 생겨
+ * 저장에만 수백 초가 걸린다 — 300초 타임아웃의 진범이 추출이 아니라 이 루프였다.
+ * unnest 로 한 번에 넣는다.
+ */
+async function insertClauses(
+  q: <R extends Record<string, unknown>>(text: string, params?: readonly unknown[]) => Promise<R[]>,
+  documentId: string,
+  clauses: { ord: number; articleNo: number | null; articleLabel: string; title: string | null; body: string }[],
+): Promise<void> {
+  await q(
+    `insert into term_clause (document_id, ord, article_no, article_label, title, body)
+     select $1, * from unnest($2::int[], $3::int[], $4::text[], $5::text[], $6::text[])`,
+    [
+      documentId,
+      clauses.map((c) => c.ord),
+      clauses.map((c) => c.articleNo),
+      clauses.map((c) => stripNul(c.articleLabel)),
+      clauses.map((c) => stripNul(c.title)),
+      clauses.map((c) => stripNul(c.body)),
+    ],
+  );
+}
+
 export async function saveTermsDoc(input: {
   memberId: string;
   policyId: string | null;
@@ -124,13 +150,7 @@ export async function saveTermsDoc(input: {
     if (input.clauses.length !== stored && input.clauses.length > 0) {
       await withTransaction(async (q) => {
         await q(`delete from term_clause where document_id = $1`, [existing[0].id]);
-        for (const c of input.clauses) {
-          await q(
-            `insert into term_clause (document_id, ord, article_no, article_label, title, body)
-             values ($1, $2, $3, $4, $5, $6)`,
-            [existing[0].id, c.ord, c.articleNo, stripNul(c.articleLabel), stripNul(c.title), stripNul(c.body)],
-          );
-        }
+        await insertClauses(q, existing[0].id, input.clauses);
       });
       return { ok: true, documentId: existing[0].id, clauseCount: input.clauses.length, duplicate: true };
     }
@@ -168,15 +188,29 @@ export async function saveTermsDoc(input: {
       [doc.id, Buffer.from(input.bytes), input.bytes.byteLength, input.mime, stripNul(input.fileName)],
     );
 
-    for (const c of input.clauses) {
-      await q(
-        `insert into term_clause (document_id, ord, article_no, article_label, title, body)
-         values ($1, $2, $3, $4, $5, $6)`,
-        [doc.id, c.ord, c.articleNo, stripNul(c.articleLabel), stripNul(c.title), stripNul(c.body)],
-      );
-    }
+    await insertClauses(q, doc.id, input.clauses);
     return doc.id;
+  }).catch(async (err: unknown) => {
+    // 해시 검사와 삽입 사이에 같은 파일이 먼저 들어오는 경합이 실제로 있었다 —
+    // 타임아웃으로 죽은 줄 알았던 첫 시도가 커밋까지 끝냈고, 재시도가 23505 로 죽었다.
+    // 유니크 충돌이면 실패가 아니라 "이미 있음" 이다.
+    const pg = err as { code?: string };
+    if (pg?.code === '23505') return null;
+    throw err;
   });
+
+  if (documentId === null) {
+    const again = await query<{ id: string; clause_count: number }>(
+      `select d.id,
+              (select count(*) from term_clause tc where tc.document_id = d.id)::int as clause_count
+         from document d where d.content_hash = $1`,
+      [hash],
+    );
+    if (again[0]) {
+      return { ok: true, documentId: again[0].id, clauseCount: again[0].clause_count, duplicate: true };
+    }
+    return { ok: false, message: '저장 중 충돌이 났어요. 다시 시도해주세요.' };
+  }
 
   return { ok: true, documentId, clauseCount: input.clauses.length, duplicate: false };
 }
