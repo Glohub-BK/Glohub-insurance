@@ -6,11 +6,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * 약관 PDF 는 수백 페이지짜리도 있다. 서버리스 기본 제한(10초)으로는 두꺼운 약관에서
- * 조항을 다 뽑기 전에 잘린다. 사용자에게는 "올렸는데 아무 일도 안 일어남" 으로 보인다.
- * Vercel Hobby 플랜의 상한이 60초다.
+ * 약관 PDF 는 수백 페이지짜리도 있다. KB 운전자·자동차 약관이 실제로 60초를 넘겨
+ * 504 로 죽었다. Fluid compute(신규 프로젝트 기본)에서는 Hobby 도 300초까지 허용된다.
+ * 배포가 이 값을 거부하면 Vercel 프로젝트 설정에서 Fluid Compute 를 켜야 한다.
  */
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

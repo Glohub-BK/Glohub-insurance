@@ -117,10 +117,27 @@ export async function saveTermsDoc(input: {
     [hash],
   );
   if (existing[0]) {
+    // 같은 파일을 다시 올렸다. 원본은 이미 있으니 다시 저장하지 않지만,
+    // **조항은 새로 파싱한 결과로 갈아끼운다** — 파서가 좋아졌을 때 재업로드가
+    // 갱신 수단이 되게 하기 위해서다. (조항 15개짜리 문서가 여기 갇혀 있었다)
+    const stored = existing[0].clause_count;
+    if (input.clauses.length !== stored && input.clauses.length > 0) {
+      await withTransaction(async (q) => {
+        await q(`delete from term_clause where document_id = $1`, [existing[0].id]);
+        for (const c of input.clauses) {
+          await q(
+            `insert into term_clause (document_id, ord, article_no, article_label, title, body)
+             values ($1, $2, $3, $4, $5, $6)`,
+            [existing[0].id, c.ord, c.articleNo, stripNul(c.articleLabel), stripNul(c.title), stripNul(c.body)],
+          );
+        }
+      });
+      return { ok: true, documentId: existing[0].id, clauseCount: input.clauses.length, duplicate: true };
+    }
     return {
       ok: true,
       documentId: existing[0].id,
-      clauseCount: existing[0].clause_count,
+      clauseCount: stored,
       duplicate: true,
     };
   }

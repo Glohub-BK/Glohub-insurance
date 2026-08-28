@@ -69,7 +69,7 @@ export function UploadTerms({
       setMsg({
         tone: 'ok',
         text: data.duplicate
-          ? '이미 들어 있는 약관이에요.'
+          ? `이미 들어 있는 약관이에요 — 조항을 다시 읽어 ${data.clauseCount.toLocaleString('ko-KR')}개로 맞췄어요.`
           : `조항 ${data.clauseCount.toLocaleString('ko-KR')}개를 읽었어요.`,
       });
       start(() => router.refresh());

@@ -39,9 +39,10 @@ describe('서버리스 배포 설정', () => {
     const route = readFileSync('src/app/api/terms/upload/route.ts', 'utf8');
     const m = route.match(/export const maxDuration = (\d+)/);
     expect(m).not.toBeNull();
-    expect(Number(m![1])).toBeGreaterThanOrEqual(30);
-    // Vercel Hobby 상한이 60초다. 그보다 크게 적으면 배포가 거절된다.
-    expect(Number(m![1])).toBeLessThanOrEqual(60);
+    // KB 약관(수백 페이지)이 60초를 넘겨 504 로 죽었다. Fluid compute 기준
+    // Hobby 상한이 300초다 — 그보다 크게 적으면 배포가 거절된다.
+    expect(Number(m![1])).toBeGreaterThanOrEqual(120);
+    expect(Number(m![1])).toBeLessThanOrEqual(300);
   });
 
   it('DB 풀이 서버리스에서 인스턴스당 연결을 줄인다', () => {
