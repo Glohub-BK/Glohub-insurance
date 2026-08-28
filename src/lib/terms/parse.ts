@@ -130,3 +130,38 @@ export function citationOf(source: {
     : source.articleLabel;
   return [who || source.title, where].join(' · ');
 }
+
+/**
+ * 파싱 품질 자가 진단.
+ *
+ * 파서가 모르는 표기의 약관을 만나면 조항을 거의 못 잡는데, 그때 조용히 저장하면
+ * "넣었는데 분석이 이상하다"가 되고 원인은 아무도 모른다 — 내생애든든 15건이 그랬다.
+ * 그래서 저장 전에 스스로 진단한다: 추출한 글자 중 얼마가 조항 안에 담겼는지(coverage),
+ * 글자량 대비 조항이 몇 개인지(밀도). 정상 약관은 1만 자당 2~30개 수준이다.
+ *
+ * 의심스러워도 저장은 한다 — 없는 것보다 낫다. 대신 화면이 알리고 로그가 남아,
+ * 사용자가 PDF 를 보내주지 않아도 어떤 형식이 새는지 운영자가 알 수 있다.
+ */
+export type ParseQuality = {
+  clauseCount: number;
+  /** 추출 텍스트 중 조항 본문에 담긴 비율 (0~1) */
+  coverage: number;
+  /** 1만 자당 조항 수 */
+  per10k: number;
+  suspicious: boolean;
+  reason: string | null;
+};
+
+export function assessParse(text: string, clauses: Clause[]): ParseQuality {
+  const total = Math.max(1, text.replace(/\s/g, '').length);
+  const inClauses = clauses.reduce((n, c) => n + c.body.replace(/\s/g, '').length, 0);
+  const coverage = Math.min(1, inClauses / total);
+  const per10k = (clauses.length / total) * 10_000;
+
+  let reason: string | null = null;
+  if (clauses.length === 0) reason = '조항 0건';
+  else if (per10k < 1.5) reason = `밀도 낮음 (${per10k.toFixed(2)}건/1만자) — 모르는 조항 표기일 수 있음`;
+  else if (coverage < 0.4) reason = `본문 유실 (${Math.round(coverage * 100)}%만 조항에 담김)`;
+
+  return { clauseCount: clauses.length, coverage, per10k, suspicious: reason !== null, reason };
+}

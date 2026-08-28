@@ -2,7 +2,7 @@ import { getCurrentHousehold } from '../repo/household';
 import { getMembers } from '../repo/dashboard';
 import { MAX_TERMS_BYTES, isPdf, saveTermsDoc } from '../repo/terms-doc';
 import { extractPdfText } from './pdf';
-import { parseClauses } from './parse';
+import { assessParse, parseClauses } from './parse';
 import { query } from '../db';
 
 /**
@@ -12,7 +12,7 @@ import { query } from '../db';
  * 두 경로가 각자 파이프라인을 가지면 한쪽만 고쳐지는 버그가 생긴다.
  */
 export type IngestResult =
-  | { status: 200; body: { ok: true; clauseCount: number; duplicate: boolean } }
+  | { status: 200; body: { ok: true; clauseCount: number; duplicate: boolean; warning?: string } }
   | { status: number; body: { ok: false; message: string } };
 
 export async function ingestTermsPdf(input: {
@@ -69,6 +69,14 @@ export async function ingestTermsPdf(input: {
   }
 
   const clauses = parseClauses(text);
+  const quality = assessParse(text, clauses);
+  if (quality.suspicious && clauses.length > 0) {
+    // 사용자 PDF 없이도 어떤 형식이 새는지 알 수 있도록 지표만 남긴다. 내용은 남기지 않는다.
+    console.warn(
+      `[terms] 파싱 품질 의심 file=${fileName} clauses=${quality.clauseCount} ` +
+        `per10k=${quality.per10k.toFixed(2)} coverage=${quality.coverage.toFixed(2)} — ${quality.reason}`,
+    );
+  }
   if (clauses.length === 0) {
     return {
       status: 422,
@@ -99,7 +107,16 @@ export async function ingestTermsPdf(input: {
       clauses,
     });
     if (!saved.ok) return { status: 400, body: saved };
-    return { status: 200, body: saved };
+    return {
+      status: 200,
+      body: quality.suspicious
+        ? {
+            ...saved,
+            warning:
+              '조항 수가 문서 분량에 비해 적어 보여요. 표기 형식이 다른 약관일 수 있으니, AI 진단 인용이 이상하면 알려주세요.',
+          }
+        : saved,
+    };
   } catch (error) {
     console.error('[terms] 저장 실패', error);
     return { status: 500, body: { ok: false, message: '저장하지 못했어요. 잠시 후 다시 시도해주세요.' } };

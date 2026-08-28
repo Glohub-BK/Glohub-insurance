@@ -59,19 +59,17 @@ export function UploadTerms({
         res = await fetch('/api/terms/upload', { method: 'POST', body: form });
       }
       const data = (await res.json()) as
-        | { ok: true; clauseCount: number; duplicate: boolean }
+        | { ok: true; clauseCount: number; duplicate: boolean; warning?: string }
         | { ok: false; message: string };
 
       if (!data.ok) {
         setMsg({ tone: 'bad', text: data.message });
         return;
       }
-      setMsg({
-        tone: 'ok',
-        text: data.duplicate
-          ? `이미 들어 있는 약관이에요 — 조항을 다시 읽어 ${data.clauseCount.toLocaleString('ko-KR')}개로 맞췄어요.`
-          : `조항 ${data.clauseCount.toLocaleString('ko-KR')}개를 읽었어요.`,
-      });
+      const base = data.duplicate
+        ? `이미 들어 있는 약관이에요 — 조항을 다시 읽어 ${data.clauseCount.toLocaleString('ko-KR')}개로 맞췄어요.`
+        : `조항 ${data.clauseCount.toLocaleString('ko-KR')}개를 읽었어요.`;
+      setMsg({ tone: 'ok', text: data.warning ? `${base} ⚠ ${data.warning}` : base });
       start(() => router.refresh());
     } catch (error) {
       console.error('[terms] 업로드 실패', error);

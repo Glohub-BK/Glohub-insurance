@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { citationOf, parseClauses } from '../src/lib/terms/parse';
+import { assessParse, citationOf, parseClauses } from '../src/lib/terms/parse';
 import { MIN_SCORE, pickClause, scoreClause } from '../src/lib/terms/match';
 
 /**
@@ -153,5 +153,37 @@ describe('옛 손보 표기 「N. (제목)」 — 내생애든든 1404 실사례
     ].join('\n');
     const clauses = parseClauses(text);
     expect(clauses).toHaveLength(1);
+  });
+});
+
+describe('assessParse — 파싱 품질 자가 진단', () => {
+  const LONG = '가'.repeat(60_000);
+
+  it('정상 밀도의 약관은 의심하지 않는다', () => {
+    const clauses = parseClauses(
+      Array.from({ length: 20 }, (_, i) => `제${i + 1}조(제목${i})\n회사는 다음의 경우 보험금을 지급합니다. ${'내용'.repeat(30)}`).join('\n'),
+    );
+    const text = clauses.map((c) => c.body).join('\n');
+    const q = assessParse(text, clauses);
+    expect(q.suspicious).toBe(false);
+  });
+
+  it('60만 자에 조항 15개 — 내생애든든 사고를 의심으로 잡는다', () => {
+    const clauses = parseClauses('제3조(의료기관)\n에 규정한 병원');
+    const q = assessParse(LONG, clauses);
+    expect(q.suspicious).toBe(true);
+    expect(q.reason).toContain('밀도');
+  });
+
+  it('조항은 많은데 본문 대부분이 조항 밖이면 유실을 의심한다', () => {
+    const clauses = parseClauses(
+      Array.from({ length: 30 }, (_, i) => `제${i + 1}조(제목)\n짧은 본문`).join('\n'),
+    );
+    const q = assessParse(LONG, clauses);
+    expect(q.suspicious).toBe(true);
+  });
+
+  it('조항 0건도 의심이다', () => {
+    expect(assessParse('아무 조항도 없는 텍스트', []).suspicious).toBe(true);
   });
 });
