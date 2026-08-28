@@ -23,14 +23,41 @@ export function UploadTerms({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
+  // Vercel 서버리스는 요청 본문을 4.5MB 로 자른다. 그보다 큰 파일(KB 약관이 그랬다)은
+  // 3MB 조각으로 나눠 보내고 서버가 이어붙인다. 작은 파일은 지금처럼 한 번에 간다.
+  const SINGLE_LIMIT = 4 * 1024 * 1024;
+  const CHUNK = 3 * 1024 * 1024;
+
   async function send(file: File) {
     setBusy(true);
     setMsg(null);
     try {
-      const form = new FormData();
-      form.set('file', file);
-      if (policyId) form.set('policyId', policyId);
-      const res = await fetch('/api/terms/upload', { method: 'POST', body: form });
+      let res: Response;
+      if (file.size > SINGLE_LIMIT) {
+        const uploadId = crypto.randomUUID();
+        const chunkCount = Math.ceil(file.size / CHUNK);
+        for (let i = 0; i < chunkCount; i += 1) {
+          setMsg({ tone: 'ok', text: `올리는 중 ${i + 1}/${chunkCount}…` });
+          const piece = file.slice(i * CHUNK, (i + 1) * CHUNK);
+          const r = await fetch(`/api/terms/upload-chunk?uploadId=${uploadId}&seq=${i}`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/octet-stream' },
+            body: piece,
+          });
+          if (!r.ok) throw new Error(`chunk ${i} 실패 (${r.status})`);
+        }
+        setMsg({ tone: 'ok', text: '조각을 이어붙여 읽는 중…' });
+        res = await fetch('/api/terms/upload', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ uploadId, chunkCount, fileName: file.name, policyId }),
+        });
+      } else {
+        const form = new FormData();
+        form.set('file', file);
+        if (policyId) form.set('policyId', policyId);
+        res = await fetch('/api/terms/upload', { method: 'POST', body: form });
+      }
       const data = (await res.json()) as
         | { ok: true; clauseCount: number; duplicate: boolean }
         | { ok: false; message: string };

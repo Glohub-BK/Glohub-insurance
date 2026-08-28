@@ -24,7 +24,10 @@ function normalizeInsurer(name: string | null | undefined): string {
 
 function normalizeProduct(name: string | null | undefined): string {
   return (name ?? '')
-    .replace(/\s/g, '')
+    // CODEF 와 공시실이 같은 상품을 「다이렉트+가정보장보험」/「다이렉트가정보장보험」처럼
+    // '+' 유무만 다르게 준다. 장식 문자일 뿐이라 동일성 판단에서 지운다 —
+    // 실제로 이 차이 때문에 같은 상품이 카드 두 장으로 갈라졌다.
+    .replace(/[\s+·]/g, '')
     .replace(/^\((무|유)\)/, '')
     .replace(/무배당|유배당/g, '')
     .toLowerCase();

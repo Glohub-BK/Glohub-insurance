@@ -75,3 +75,17 @@ describe('조항 공유 경계', () => {
     expect(sql).not.toMatch(/for all using/);
   });
 });
+
+describe("장식 문자 '+' · '·' 는 동일성 판단에서 지운다", () => {
+  it('+ 유무만 다른 표기는 같은 상품이다 — 실제로 카드가 두 장으로 갈라졌던 사고', () => {
+    expect(productKeyOf('DB손해보험', '다이렉트+가정보장보험2004(CM)')).toBe(
+      productKeyOf('DB손해보험', '다이렉트가정보장보험2004(CM)'),
+    );
+  });
+
+  it('회차 숫자는 여전히 보존된다', () => {
+    expect(productKeyOf('DB손해보험', '다이렉트+가정보장보험2004(CM)')).not.toBe(
+      productKeyOf('DB손해보험', '다이렉트가정보장보험2005(CM)'),
+    );
+  });
+});

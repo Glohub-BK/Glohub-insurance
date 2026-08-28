@@ -67,7 +67,7 @@ describe('약관 파일 검증', () => {
 
 describe('약관 원본 보관 경계', () => {
   const route = readFileSync('src/app/api/terms/[documentId]/route.ts', 'utf8');
-  const upload = readFileSync('src/app/api/terms/upload/route.ts', 'utf8');
+  const upload = readFileSync('src/lib/terms/ingest.ts', 'utf8');
 
   it('다운로드는 가구 소속을 확인한 뒤에만 파일을 준다', () => {
     expect(route).toContain('belongsToHousehold');

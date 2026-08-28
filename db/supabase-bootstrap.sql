@@ -462,6 +462,23 @@ create index if not exists policy_product_key_idx
   on policy(product_key) where product_key is not null;
 
 
+-- ─────────────────────────────────────────────── 0013_upload_chunk.sql
+
+-- 큰 약관 PDF 를 조각으로 받는 임시 보관함.
+--
+-- Vercel 서버리스는 요청 본문을 4.5MB 로 자른다. KB 약관처럼 그보다 큰 PDF 는
+-- 한 번에 못 올라온다 — 실제로 413 이 다섯 번 찍힌 뒤에 만든 테이블이다.
+-- 클라이언트가 3MB 조각으로 나눠 넣고, 마지막 요청이 이어붙여 문서로 저장한 뒤
+-- 조각을 지운다. 오래 남은 조각은 다음 업로드가 치운다.
+create table if not exists upload_chunk (
+  upload_id  uuid        not null,
+  seq        int         not null,
+  bytes      bytea       not null,
+  created_at timestamptz not null default now(),
+  primary key (upload_id, seq)
+);
+
+
 -- ─────────────────────────────────────────────── 0003_rls_supabase.sql
 
 -- Supabase 로 옮길 때만 적용한다. 로컬 Postgres 에서는 auth 스키마가 없어 실패한다.
@@ -607,6 +624,13 @@ create policy term_clause_shared_read on term_clause
   );
 
 
+-- ─────────────────────────────────────────────── 0014_rls_upload_chunk_supabase.sql
+
+-- Supabase 전용. 업로드 조각은 서버(라우트 핸들러)만 만진다.
+-- 정책을 하나도 만들지 않는다 = 클라이언트 역할(anon/authenticated)은 전부 차단.
+alter table upload_chunk enable row level security;
+
+
 -- ─────────────────────────────────────────────── 적용 이력 기록
 -- 나중에 로컬 마이그레이션 스크립트를 이 DB 로 돌릴 때 중복 적용되지 않게 표시해 둔다.
 create table if not exists schema_migrations (
@@ -621,9 +645,11 @@ insert into schema_migrations (name) values
   ('0007_member_avatar.sql'),
   ('0009_document_blob.sql'),
   ('0011_shared_terms.sql'),
+  ('0013_upload_chunk.sql'),
   ('0003_rls_supabase.sql'),
   ('0006_rls_terms.sql'),
   ('0008_rls_avatar_supabase.sql'),
   ('0010_rls_document_blob_supabase.sql'),
-  ('0012_rls_shared_terms_supabase.sql')
+  ('0012_rls_shared_terms_supabase.sql'),
+  ('0014_rls_upload_chunk_supabase.sql')
 on conflict (name) do nothing;

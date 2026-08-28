@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentHousehold } from '@/lib/repo/household';
-import { getMembers } from '@/lib/repo/dashboard';
-import { MAX_TERMS_BYTES, isPdf, saveTermsDoc } from '@/lib/repo/terms-doc';
-import { extractPdfText } from '@/lib/terms/pdf';
-import { parseClauses } from '@/lib/terms/parse';
-import { query } from '@/lib/db';
+import { ingestTermsPdf } from '@/lib/terms/ingest';
+import { assembleUpload, deleteUpload, MAX_CHUNKS } from '@/lib/repo/upload-chunk';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,16 +12,57 @@ export const dynamic = 'force-dynamic';
  */
 export const maxDuration = 60;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * 약관 파일 업로드.
+ * 약관 파일 업로드 — 두 갈래, 한 파이프라인.
+ *
+ *   1. multipart(FormData): 4MB 이하 파일이 한 번에 온다.
+ *   2. JSON {uploadId, chunkCount, ...}: 그보다 큰 파일. 클라이언트가 3MB 조각으로
+ *      /api/terms/upload-chunk 에 나눠 넣은 뒤, 이 요청이 이어붙인다.
+ *      (Vercel 서버리스는 요청 본문을 4.5MB 로 자른다 — 413 다섯 번 맞고 만든 구조다)
  *
  * 서버 액션이 아니라 라우트 핸들러인 이유: 서버 액션 본문은 기본 1MB 로 잘린다.
- * 약관 PDF 는 보통 그보다 크다.
- *
- * 저장 전에 조항을 뽑는다. 조항이 하나도 안 잡히면 저장하지 않고 이유를 알려준다 —
- * 스캔한 이미지 PDF 를 받아두면 "넣었는데 인용이 안 바뀐다"가 된다.
  */
 export async function POST(request: Request) {
+  const contentType = request.headers.get('content-type') ?? '';
+
+  // ── 갈래 2: 조각 업로드 마무리 ─────────────────────────────────────────
+  if (contentType.includes('application/json')) {
+    const body = (await request.json().catch(() => null)) as {
+      uploadId?: unknown;
+      chunkCount?: unknown;
+      fileName?: unknown;
+      policyId?: unknown;
+    } | null;
+
+    const uploadId = typeof body?.uploadId === 'string' && UUID.test(body.uploadId) ? body.uploadId : null;
+    const chunkCount =
+      typeof body?.chunkCount === 'number' && Number.isInteger(body.chunkCount) ? body.chunkCount : 0;
+    if (!uploadId || chunkCount < 1 || chunkCount > MAX_CHUNKS) {
+      return NextResponse.json({ ok: false, message: '업로드 정보가 올바르지 않아요.' }, { status: 400 });
+    }
+
+    const bytes = await assembleUpload(uploadId, chunkCount);
+    if (!bytes) {
+      await deleteUpload(uploadId);
+      return NextResponse.json(
+        { ok: false, message: '조각이 다 도착하지 않았어요. 처음부터 다시 올려주세요.' },
+        { status: 409 },
+      );
+    }
+
+    const result = await ingestTermsPdf({
+      bytes,
+      fileName: typeof body?.fileName === 'string' ? body.fileName : 'terms.pdf',
+      policyId: typeof body?.policyId === 'string' && body.policyId.trim() ? body.policyId.trim() : null,
+    });
+    // 성공이든 실패든 조각은 여기서 끝이다. 남겨두면 다음 시도와 섞인다.
+    await deleteUpload(uploadId);
+    return NextResponse.json(result.body, { status: result.status });
+  }
+
+  // ── 갈래 1: 한 번에 온 파일 ───────────────────────────────────────────
   let form: FormData;
   try {
     form = await request.formData();
@@ -38,97 +75,11 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ ok: false, message: '약관 파일을 골라주세요.' }, { status: 400 });
   }
-  if (file.size > MAX_TERMS_BYTES) {
-    return NextResponse.json(
-      { ok: false, message: '파일이 너무 큽니다. 40MB 이하만 올릴 수 있어요.' },
-      { status: 400 },
-    );
-  }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes.byteLength === 0) {
-    return NextResponse.json({ ok: false, message: '빈 파일이에요.' }, { status: 400 });
-  }
-  if (!isPdf(bytes)) {
-    return NextResponse.json(
-      { ok: false, message: 'PDF 파일만 올릴 수 있어요. 보험사 공시실에서 받은 약관 PDF 를 골라주세요.' },
-      { status: 400 },
-    );
-  }
-
-  const household = await getCurrentHousehold().catch(() => null);
-  if (!household) {
-    return NextResponse.json(
-      { ok: false, message: '먼저 내 보험을 조회해 주세요.' },
-      { status: 409 },
-    );
-  }
-
-  // 계약을 지정했다면 우리 가구의 계약인지 확인한다. 화면을 거치지 않는 요청도 있다.
-  let insurerName: string | null = null;
-  let productName: string | null = null;
-  if (policyId) {
-    const rows = await query<{ insurer_name: string; product_name: string }>(
-      `select p.insurer_name, p.product_name
-         from policy p join member m on m.id = p.member_id
-        where p.id = $1 and m.household_id = $2`,
-      [policyId, household.id],
-    );
-    if (!rows[0]) {
-      return NextResponse.json({ ok: false, message: '이 계약에는 올릴 수 없어요.' }, { status: 403 });
-    }
-    insurerName = rows[0].insurer_name;
-    productName = rows[0].product_name;
-  }
-
-  let text: string;
-  try {
-    text = await extractPdfText(bytes);
-  } catch (error) {
-    console.error('[terms] PDF 읽기 실패', error);
-    return NextResponse.json(
-      { ok: false, message: 'PDF 를 열지 못했어요. 파일이 손상되었거나 암호가 걸려 있을 수 있어요.' },
-      { status: 400 },
-    );
-  }
-
-  const clauses = parseClauses(text);
-  if (clauses.length === 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        message:
-          '조항을 하나도 찾지 못했어요. 스캔한 이미지 PDF 로 보입니다 — 공시실에서 글자를 복사할 수 있는 PDF 를 다시 받아주세요.',
-      },
-      { status: 422 },
-    );
-  }
-
-  const members = await getMembers(household.id);
-  const me = members.find((m) => m.relation === '본인') ?? members[0];
-  if (!me) {
-    return NextResponse.json({ ok: false, message: '구성원을 찾지 못했어요.' }, { status: 409 });
-  }
-
-  try {
-    const saved = await saveTermsDoc({
-      memberId: me.member_id,
-      policyId,
-      title: productName ?? file.name.replace(/\.pdf$/i, ''),
-      fileName: file.name || 'terms.pdf',
-      mime: 'application/pdf',
-      bytes,
-      insurerName,
-      productName,
-      clauses,
-    });
-    if (!saved.ok) return NextResponse.json(saved, { status: 400 });
-    return NextResponse.json(saved);
-  } catch (error) {
-    console.error('[terms] 저장 실패', error);
-    return NextResponse.json(
-      { ok: false, message: '저장하지 못했어요. 잠시 후 다시 시도해주세요.' },
-      { status: 500 },
-    );
-  }
+  const result = await ingestTermsPdf({
+    bytes: new Uint8Array(await file.arrayBuffer()),
+    fileName: file.name || 'terms.pdf',
+    policyId,
+  });
+  return NextResponse.json(result.body, { status: result.status });
 }
