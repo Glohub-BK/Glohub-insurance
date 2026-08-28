@@ -9,7 +9,9 @@
  */
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+// 2.5-flash 는 문서상 지원이지만 신규 발급 키에서 404 가 보고된다.
+// 안정 최신 세대의 flash 를 기본으로 쓰고, 필요하면 GEMINI_MODEL 로 바꾼다.
+const DEFAULT_MODEL = 'gemini-3.5-flash';
 
 export class LlmError extends Error {
   constructor(
@@ -64,8 +66,20 @@ export async function generateJson(input: {
   });
 
   if (!res.ok) {
-    // 응답 본문에 키가 비치는 일은 없지만, 그래도 상태 코드만 전달한다.
-    throw new LlmError('http', `LLM 호출 실패 (HTTP ${res.status})`);
+    // 오류 본문의 message 는 원인 특정에 필수다 (모델 폐기 404, 스키마 400, 키 403).
+    // 키는 요청 헤더에만 있고 응답 본문에 비치지 않는다.
+    const detail = await res
+      .text()
+      .then((t) => {
+        try {
+          const parsed = JSON.parse(t) as { error?: { message?: string } };
+          return parsed.error?.message ?? '';
+        } catch {
+          return '';
+        }
+      })
+      .catch(() => '');
+    throw new LlmError('http', `LLM 호출 실패 (HTTP ${res.status}) model=${model} ${detail.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {

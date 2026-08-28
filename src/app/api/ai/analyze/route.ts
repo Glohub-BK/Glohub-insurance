@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     if (err instanceof LlmError) {
-      console.error(`[ai-analyze] LLM 오류 code=${err.code}`);
+      console.error(`[ai-analyze] LLM 오류 code=${err.code} — ${err.message}`);
       return NextResponse.json(
         { error: 'AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.' },
         { status: 502 },
