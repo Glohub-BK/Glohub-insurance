@@ -61,7 +61,7 @@ export const INCIDENT_RULES: IncidentRule[] = [
   {
     id: 'liability-damage',
     label: '타인 물건 파손',
-    keywords: ['안경', '파손', '깨', '망가', '부쉈', '부수', '물건', '자전거', '휴대폰', '핸드폰', '유리', '긁어'],
+    keywords: ['안경', '파손', '깨', '망가', '부쉈', '부수', '부서', '물건', '장난감', '자전거', '휴대폰', '핸드폰', '유리', '긁어', '고장', '떨어뜨'],
     categories: ['liability'],
     direct: /배상책임|일상생활|가족일상|자녀배상|파손/,
     exclude: /자동차|차량|운전|자차|대인|대물/,

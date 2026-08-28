@@ -199,3 +199,27 @@ describe('selectClauses — 어휘가 안 겹칠 때의 안전망', () => {
     expect(selectClauses('강아지가 이웃을 물었어요', [])).toHaveLength(0);
   });
 });
+
+describe('selectClauses — 핵심 조항은 폴백이 아니라 상시 동반', () => {
+  it('어휘로 몇 건 걸려도 배상책임 조항이 함께 실린다 — 「장난감 부서뜨림」 실사례', () => {
+    const clauses: ClauseInput[] = [
+      // 어휘가 겹치는 엉뚱한 조항 (사고 문장의 '아들'이 들어 있음)
+      { ...CLAUSE, articleLabel: '제12조', title: '계약자 변경', body: '계약자의 아들 등 친족으로 계약자를 변경할 수 있습니다.' },
+      // 배상책임 핵심 조항 — 어휘는 안 겹치지만 반드시 실려야 한다
+      CLAUSE,
+      { ...CLAUSE, articleLabel: '제20조', title: '보험료 납입', body: '계약자는 보험료를 납입기일까지 납입하여야 합니다.' },
+    ];
+    const picked = selectClauses('우리 아들이 친구의 장난감을 부서뜨렸어요', clauses);
+    expect(picked.map((c) => c.articleLabel)).toContain('제3조'); // 배상책임
+    expect(picked.map((c) => c.articleLabel)).not.toContain('제20조');
+  });
+
+  it('limit 은 여전히 지킨다', () => {
+    const many = Array.from({ length: 60 }, (_, i) => ({
+      ...CLAUSE,
+      articleLabel: `제${i}조`,
+      body: i % 2 === 0 ? '배상책임을 보상합니다' : '아들 관련 어휘 조항',
+    }));
+    expect(selectClauses('아들이 장난감을 부서뜨렸어요', many, 12).length).toBeLessThanOrEqual(12);
+  });
+});

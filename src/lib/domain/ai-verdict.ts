@@ -166,12 +166,28 @@ export function selectClauses(text: string, clauses: ClauseInput[], limit = 12):
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  if (scored.length > 0) return scored.slice(0, limit).map((s) => s.c);
+  // 어휘 겹침 상위 + 핵심 조항을 **항상 함께** 보낸다.
+  //
+  // 처음엔 핵심 조항을 "겹침이 0일 때의 폴백"으로만 썼다. 그러자 「아들이 친구
+  // 장난감을 부서뜨렸어요」에서 어휘로 7건이 걸리는 바람에 폴백이 안 열렸고,
+  // 그 7건에 배상책임 조항이 없어 AI 가 "근거 조항이 없다"고 정확하게(!) 판정했다.
+  // 사고 어휘와 약관 어휘는 원래 잘 안 겹친다 — 판단의 뼈대는 항상 실어야 한다.
+  const lexical = scored.slice(0, Math.max(4, limit - 8)).map((s) => s.c);
+  const picked = new Set(lexical);
+  const core = clauses
+    .filter((c) => !picked.has(c))
+    .map((c) => {
+      const head = `${c.title ?? ''} ${c.body.slice(0, 80)}`;
+      // 배상책임 조항을 앞세운다 — 일상 사고 질의의 대부분이 여기로 귀결된다.
+      const w = /배상책임/.test(head) ? 2 : CORE_CLAUSE.test(head) ? 1 : 0;
+      return { c, w };
+    })
+    .filter((s) => s.w > 0)
+    .sort((a, b) => b.w - a.w)
+    .slice(0, Math.max(0, limit - lexical.length))
+    .map((s) => s.c);
 
-  // 어휘가 하나도 안 겹치면(「강아지가 물었어요」는 약관 어디에도 없다) 핵심 조항으로
-  // 대신 채운다 — 무엇을 보상하고 무엇을 면책하는지 적힌 조항이 판단의 뼈대다.
-  // 임베딩 검색을 붙이기 전까지의 안전망이다.
-  return clauses.filter((c) => CORE_CLAUSE.test(`${c.title ?? ''} ${c.body.slice(0, 80)}`)).slice(0, limit);
+  return [...lexical, ...core];
 }
 
 /** 담보의 뼈대 조항 — 보상하는 손해·보험금 지급사유·면책. */

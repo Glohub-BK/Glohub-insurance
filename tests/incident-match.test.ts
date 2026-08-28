@@ -384,3 +384,13 @@ describe('explainMatch — 판정 이유를 담보마다 되돌려준다', () =>
     expect(explainMatch('오늘 날씨 좋다', MIXED)).toEqual({ ruleId: null, rows: [] });
   });
 });
+
+describe('활용형·흔한 물건 — 「부서뜨렸어요」「장난감」', () => {
+  it.each([
+    '우리 아들(수호)이 친구의 장난감을 부서뜨렸어요',
+    '아이가 마트에서 물건을 떨어뜨려 고장냈어요',
+    '딸이 친구 핸드폰 액정을 깨뜨렸어요',
+  ])('%s → liability-damage', (text) => {
+    expect(pickRule(text)?.rule.id).toBe('liability-damage');
+  });
+});
