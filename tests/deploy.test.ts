@@ -19,6 +19,15 @@ describe('서버리스 배포 설정', () => {
     expect(config).toContain('pdfjs-dist/legacy/build');
   });
 
+
+  it('pdfjs 는 폴리필 뒤 동적 import — 정적 import 는 배포에서만 죽는다', () => {
+    const pdf = readFileSync('src/lib/terms/pdf.ts', 'utf8');
+    // 서버리스에는 DOMMatrix 가 없다. 정적 import 는 폴리필보다 먼저 평가된다.
+    expect(pdf).not.toMatch(/^import .*pdfjs-dist/m);
+    expect(pdf).toContain("g.DOMMatrix ??=");
+    expect(pdf.indexOf('g.DOMMatrix ??=')).toBeLessThan(pdf.indexOf("pdfjsLoading = import('pdfjs-dist"));
+  });
+
   it('추적에 넣는 경로가 실제로 있는 파일이다', () => {
     // 오타로 경로가 어긋나면 조용히 아무것도 포함되지 않는다.
     expect(() =>

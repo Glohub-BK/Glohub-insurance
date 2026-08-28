@@ -3,6 +3,7 @@ import { listTermsDocs } from '@/lib/repo/terms-doc';
 import { getPolicyTermsStatus } from '@/lib/repo/terms';
 import { getHouseholdView } from '@/lib/repo/view-data';
 import { disclosureFor, searchTermFor } from '@/lib/domain/insurer-disclosure';
+import { productKeyOf } from '@/lib/domain/product-key';
 import { Card, Disclaimer, Icon, ICONS, Pill, SectionTitle } from '../_components/ui';
 import { DataErrorCard } from '../_components/data-error';
 import { PreviewNotice } from '../_components/connect';
@@ -61,9 +62,23 @@ export default async function TermsPage() {
 
   // 유지 중인 계약만 다룬다. 만기된 계약의 약관을 지금 받아둘 이유는 적다.
   const active = policies.filter((p) => p.status === '유지');
+
+  // 약관은 계약이 아니라 **상품** 단위다. 같은 상품 계약이 두 건이어도 약관은 하나 —
+  // 계약마다 카드를 내면 같은 상품이 반복돼 "이걸 왜 두 번 올리라는 거지"가 된다.
+  const groups = new Map<string, typeof active>();
+  for (const p of active) {
+    const key = productKeyOf(p.insurer_name, p.product_name) ?? p.id;
+    const list = groups.get(key) ?? [];
+    list.push(p);
+    groups.set(key, list);
+  }
+  const products = Array.from(groups.values());
+
+  const groupClauses = (list: typeof active) =>
+    Math.max(0, ...list.map((p) => byPolicyStatus.get(p.id)?.clause_count ?? 0));
   // "약관이 있다"의 기준은 우리가 파일을 가졌는지가 아니라 **조항을 쓸 수 있는지**다.
   // 같은 상품을 다른 사용자가 이미 올렸다면 우리는 아무것도 하지 않아도 된다.
-  const covered = active.filter((p) => (byPolicyStatus.get(p.id)?.clause_count ?? 0) > 0).length;
+  const covered = products.filter((list) => groupClauses(list) > 0).length;
   const loose = docs.filter((d) => !d.policy_id);
 
   return (
@@ -83,9 +98,9 @@ export default async function TermsPage() {
       <Card>
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { label: '유지 계약', value: `${active.length}건` },
-            { label: '조항 확보', value: `${covered}건`, accent: true },
-            { label: '올려야 함', value: `${active.length - covered}건` },
+            { label: '유지 상품', value: `${products.length}개` },
+            { label: '조항 확보', value: `${covered}개`, accent: true },
+            { label: '올려야 함', value: `${products.length - covered}개` },
           ].map((t) => (
             <span key={t.label} className="rounded-[12px] px-2 py-2.5" style={{ background: 'var(--sub)' }}>
               <b
@@ -110,9 +125,9 @@ export default async function TermsPage() {
         </span>
       </Card>
 
-      <SectionTitle meta={`${active.length}건`}>유지 중인 계약</SectionTitle>
+      <SectionTitle meta={`${products.length}개`}>가입 상품</SectionTitle>
 
-      {active.length === 0 ? (
+      {products.length === 0 ? (
         <Card flat>
           <p className="text-[15px]" style={{ color: 'var(--ink-2)' }}>
             유지 중인 계약이 없습니다.
@@ -120,13 +135,15 @@ export default async function TermsPage() {
         </Card>
       ) : null}
 
-      {active.map((p) => {
-        const mine = byPolicy.get(p.id) ?? [];
-        const st = byPolicyStatus.get(p.id);
-        const clauseCount = st?.clause_count ?? 0;
+      {products.map((list) => {
+        const p = list[0];
+        const mine = list.flatMap((x) => byPolicy.get(x.id) ?? []);
+        const clauseCount = groupClauses(list);
         const sharedOnly = clauseCount > 0 && mine.length === 0;
         const disclosure = disclosureFor(p.insurer_name);
         const term = searchTermFor(p.product_name);
+        // 같은 상품의 계약이 여럿이면 누구 것들인지 한 줄로 요약한다.
+        const holders = Array.from(new Set(list.map((x) => x.member_name))).join(' · ');
 
         return (
           <Card key={p.id} className="flex flex-col gap-3">
@@ -140,7 +157,8 @@ export default async function TermsPage() {
                 )}
               </span>
               <span className="mt-0.5 block text-[14px]" style={{ color: 'var(--ink-3)' }}>
-                {p.product_name} · {p.member_name}
+                {p.product_name} · {holders}
+                {list.length > 1 ? ` · 계약 ${list.length}건` : ''}
               </span>
             </span>
 
