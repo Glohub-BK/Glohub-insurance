@@ -63,10 +63,13 @@ export const INCIDENT_RULES: IncidentRule[] = [
     label: '타인 물건 파손',
     keywords: ['안경', '파손', '깨', '망가', '부쉈', '부수', '부서', '물건', '장난감', '자전거', '휴대폰', '핸드폰', '유리', '긁어', '고장', '떨어뜨'],
     categories: ['liability'],
-    direct: /배상책임|일상생활|가족일상|자녀배상|파손/,
-    exclude: /자동차|차량|운전|자차|대인|대물/,
+    direct: /배상책임|일상생활|가족일상|가족생활|자녀배상|파손/,
+    // '대인|대물' 을 이름 제외에 두지 않는다 — 「가족생활배상책임(대인·대물)」까지 지워
+    // "담보 없음" 오탐을 냈다. 자동차보험의 대물배상은 excludeKinds('car')가 막는다.
+    exclude: /자동차|차량|운전|자차/,
     excludeKinds: ['car', 'savings'],
-    allowDespiteExclusion: /일상생활|가족일상|자녀배상/,
+    // 담보명 표기는 회사마다 다르다: 가족일상생활 / 가족생활 / 일상배상 / 자녀배상.
+    allowDespiteExclusion: /일상생활|가족일상|가족생활|생활배상|일상배상|자녀배상/,
     headline: '청구 가능성 높음',
     lead: '남의 물건을 망가뜨린 사고는 배상책임 담보로 처리합니다.',
     note: '자녀 본인 계약이 없어도, 부모 계약의 이 특약은 주민등록상 동거 가족을 함께 보장하는 것이 일반적입니다. 자녀 이름으로 담보가 없다고 포기하지 마세요.',
@@ -145,8 +148,8 @@ export const INCIDENT_RULES: IncidentRule[] = [
     categories: ['liability', 'fire'],
     direct: /배상책임|일상생활|급배수|누출|누수|주택|화재|가재|재물/,
     excludeKinds: ['car', 'savings'],
-    exclude: /자동차|차량|운전|대인/,
-    allowDespiteExclusion: /일상생활|가족일상|급배수/,
+    exclude: /자동차|차량|운전/,
+    allowDespiteExclusion: /일상생활|가족일상|가족생활|생활배상|급배수/,
     headline: '가해자 보험을 먼저 확인하세요',
     lead: '윗집 누수 피해는 윗집의 일상생활배상책임에서 나옵니다. 우리 계약이 아니라 상대 계약이 먼저입니다.',
     note: '우리 계약에 화재·재물 담보가 있어도 누수는 화재담보 대상이 아닙니다. 다만 급배수시설 누출 손해 특약이 붙어 있으면 우리 보험으로도 가능합니다.',

@@ -361,7 +361,8 @@ describe('explainMatch — 판정 이유를 담보마다 되돌려준다', () =>
     expect(ex.ruleId).toBe('liability-damage');
     const fateOf = (name: string) => ex.rows.find((r) => r.candidate.name === name)?.fate;
     expect(fateOf('가족일상생활중배상책임(대인·대물)')).toBe('direct');
-    expect(fateOf('대물배상')).toBe('excluded-name');
+    // 이름 제외에서 대인·대물을 걷어낸 뒤에는 계약 종류가 막는다
+    expect(fateOf('대물배상')).toBe('excluded-kind');
     expect(fateOf('골절진단비')).toBe('out-of-category');
     expect(fateOf('배상책임보장')).toBe('excluded-status');
   });
@@ -392,5 +393,29 @@ describe('활용형·흔한 물건 — 「부서뜨렸어요」「장난감」',
     '딸이 친구 핸드폰 액정을 깨뜨렸어요',
   ])('%s → liability-damage', (text) => {
     expect(pickRule(text)?.rule.id).toBe('liability-damage');
+  });
+});
+
+describe('담보명 표기 변형 — 「가족생활배상책임담보」 실사례', () => {
+  // Gemini 답변에 비친 실제 담보명은 '가족일상생활'이 아니라 '가족생활'이었다.
+  // allow 패턴이 그 표기를 몰라 "담보 없음" 오탐이 났다.
+  const TEXT = '아이가 친구 안경을 깨뜨렸어요';
+
+  it.each([
+    '가족생활배상책임담보',
+    '가족생활배상책임(대인·대물)',
+    '일상배상책임',
+    '배상책임(대물)', // 이름 제외에서 대인·대물을 걷어냈으므로 이제 살아남는다
+  ])('%s 가 직접 해당으로 나온다', (name) => {
+    const r = matchIncident(TEXT, [cov({ name })]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(false);
+    expect(r.coverages.map((c) => c.name)).toContain(name);
+  });
+
+  it('자동차보험(car)의 대물배상은 계약 종류로 여전히 걸러진다', () => {
+    const r = matchIncident(TEXT, [cov({ name: '대물배상', contractKind: 'car' })]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(true);
   });
 });
