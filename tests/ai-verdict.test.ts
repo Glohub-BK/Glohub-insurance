@@ -175,7 +175,8 @@ describe('개인정보처리방침 — AI 위탁 고지', () => {
     const privacy = JSON.stringify(findDoc('privacy'));
     expect(privacy).toContain('Google');
     expect(privacy).toContain('Gemini');
-    expect(privacy).toContain('버튼을 누르기 전에는 어떤 정보도 전송되지 않습니다');
+    expect(privacy).toContain('동의하기 전에는 어떤 정보도 전송되지');
+    expect(privacy).toContain('최초 1회 동의');
   });
 });
 

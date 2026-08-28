@@ -26,8 +26,11 @@ const MAX_TEXT = 300;
 const MAX_COVERAGES = 60;
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { text?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { text?: unknown; normalized?: unknown } | null;
   const text = typeof body?.text === 'string' ? body.text.trim().slice(0, MAX_TEXT) : '';
+  // 해석기가 약관 어휘로 재서술한 문장. 조항 검색은 이걸 우선한다 —
+  // "장난감을 부서뜨렸어요" 로는 약관이 안 잡히지만 "재물 파손 배상책임" 으로는 잡힌다.
+  const normalized = typeof body?.normalized === 'string' ? body.normalized.trim().slice(0, MAX_TEXT) : '';
   if (text.length < 5) {
     return NextResponse.json({ error: '사고 상황을 조금 더 적어주세요.' }, { status: 400 });
   }
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
     body: c.body,
     source: [c.insurer_name, c.product_name].filter(Boolean).join(' · ') || c.doc_title,
   }));
-  const clauses = selectClauses(text, allClauses);
+  const clauses = selectClauses(normalized.length >= 5 ? `${normalized} ${text}` : text, allClauses);
 
   if (coverages.length === 0) {
     return NextResponse.json({ error: '보유 담보가 없어 분석할 수 없습니다.' }, { status: 404 });

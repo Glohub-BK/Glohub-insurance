@@ -58,7 +58,9 @@ export async function generateJson(input: {
         responseMimeType: 'application/json',
         responseSchema: input.schema,
         temperature: 0.2, // 창의성이 아니라 판정이 필요하다
-        maxOutputTokens: 2048,
+        // 3.x flash 는 thinking 모델이다 — 생각 토큰이 이 한도를 같이 쓴다.
+        // 2048 로 뒀더니 생각이 한도를 먼저 먹고 JSON 이 잘린 채 왔다 (bad-json ×4).
+        maxOutputTokens: 16384,
       },
     }),
     // 약관 분석은 오래 걸릴 이유가 없다. 오래 걸리면 뭔가 잘못된 것이다.
@@ -90,13 +92,46 @@ export async function generateJson(input: {
   if (data.promptFeedback?.blockReason) {
     throw new LlmError('blocked', `요청이 차단되었습니다: ${data.promptFeedback.blockReason}`);
   }
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
+  const candidate = data.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
   if (text.trim().length === 0) {
-    throw new LlmError('empty', 'LLM 이 빈 응답을 반환했습니다.');
+    throw new LlmError('empty', `LLM 이 빈 응답을 반환했습니다 (finish=${candidate?.finishReason ?? '?'})`);
   }
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new LlmError('bad-json', 'LLM 응답이 JSON 이 아닙니다.');
+  const parsed = extractJsonPayload(text);
+  if (parsed === null) {
+    // 내용은 로그에 싣지 않는다 — 원인 특정에는 finishReason 과 길이면 충분하다.
+    throw new LlmError(
+      'bad-json',
+      `LLM 응답이 JSON 이 아닙니다 (finish=${candidate?.finishReason ?? '?'}, len=${text.length})`,
+    );
   }
+  return parsed;
+}
+
+/**
+ * 모델 출력에서 JSON 을 건져낸다.
+ *
+ * responseMimeType 을 지정해도 일부 응답은 \`\`\`json 펜스를 씌우거나 앞뒤에 말이 붙는다.
+ * 첫 '{' 부터 마지막 '}' 까지를 한 번 더 시도한다 — 잘린 JSON 은 여기서도 실패하며,
+ * 그때는 호출자가 bad-json 으로 원인을 로그에 남긴다.
+ */
+export function extractJsonPayload(text: string): unknown | null {
+  const stripped = text.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+  for (const candidate of [stripped, text]) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // 다음 후보
+    }
+  }
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }

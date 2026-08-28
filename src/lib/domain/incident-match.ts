@@ -247,8 +247,16 @@ export function pickRule(text: string): { rule: IncidentRule; score: number } | 
   return best ? { rule: best, score: bestScore } : null;
 }
 
-export function matchIncident(text: string, candidates: CoverageCandidate[]): MatchResult {
-  const picked = pickRule(text);
+export function matchIncident(
+  text: string,
+  candidates: CoverageCandidate[],
+  opts?: {
+    /** AI 해석기가 정한 규칙 id. 키워드 점수를 건너뛰고 이 규칙으로 매칭한다. */
+    forceRuleId?: string;
+  },
+): MatchResult {
+  const forced = opts?.forceRuleId ? INCIDENT_RULES.find((r) => r.id === opts.forceRuleId) : undefined;
+  const picked = forced ? { rule: forced, score: 1 } : pickRule(text);
   if (!picked) return { kind: 'unknown' };
 
   const { rule } = picked;

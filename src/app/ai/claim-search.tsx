@@ -15,6 +15,8 @@ import type { ClauseCitation } from '@/lib/repo/terms';
 import { Card, Disclaimer, Icon, ICONS, Pill, shortWon } from '../_components/ui';
 import { ConnectCard, PreviewNotice } from '../_components/connect';
 
+const CONSENT_KEY = 'nochil-ai-interpret-consent';
+
 const EXAMPLES = [
   { chip: '아이가 물건 파손', q: '아이가 친구 안경을 깨뜨렸어요' },
   { chip: '넘어져서 골절', q: '계단에서 넘어져서 손목이 골절됐어요' },
@@ -45,13 +47,80 @@ export function ClaimSearch({
   const [result, setResult] = useState<MatchResult | null>(
     initialQuery.trim() ? matchIncident(initialQuery.trim(), candidates) : null,
   );
+  // AI 해석기 상태. 해석은 관문이지 결론이 아니다 — 실패하면 키워드 규칙으로 폴백한다.
+  const [interpreting, setInterpreting] = useState(false);
+  const [normalized, setNormalized] = useState<string | undefined>(undefined);
+  // 'unknown' 은 아직 물어보지 않은 상태. 저장소는 서버 렌더와 첫 화면에 없으므로
+  // 렌더에서 읽지 않는다 — 검색 버튼을 누르는 순간(이벤트 핸들러)에만 읽는다.
+  // 그래야 서버와 클라이언트의 첫 화면이 어긋나지 않는다.
+  const [consent, setConsent] = useState<'unknown' | 'granted' | 'denied'>('unknown');
+  const [pending, setPending] = useState<string | null>(null);
+
+  function storedConsent(): 'unknown' | 'granted' | 'denied' {
+    try {
+      const saved = localStorage.getItem(CONSENT_KEY);
+      return saved === 'granted' || saved === 'denied' ? saved : 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  function saveConsent(value: 'granted' | 'denied') {
+    setConsent(value);
+    try {
+      localStorage.setItem(CONSENT_KEY, value);
+    } catch {
+      // 저장 실패해도 이번 세션은 동작한다
+    }
+  }
+
+  function runKeyword(trimmed: string) {
+    setNormalized(undefined);
+    setResult(matchIncident(trimmed, candidates));
+  }
+
+  async function runWithAi(trimmed: string) {
+    setInterpreting(true);
+    setResult(null);
+    try {
+      const res = await fetch('/api/ai/interpret', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: trimmed }),
+      });
+      const body = (await res.json()) as {
+        interpretation: { ruleId: string | null; normalizedQuery: string } | null;
+      };
+      const it = res.ok ? body.interpretation : null;
+      setNormalized(it?.normalizedQuery);
+      // 해석이 규칙을 짚으면 그 규칙으로, 못 짚으면 키워드로 — 결정은 여기까지가 AI 의 몫이고
+      // 담보 선별·금액·인용은 전부 기존 결정적 코드가 한다.
+      setResult(matchIncident(trimmed, candidates, it?.ruleId ? { forceRuleId: it.ruleId } : undefined));
+    } catch {
+      runKeyword(trimmed);
+    } finally {
+      setInterpreting(false);
+    }
+  }
 
   function run(q: string) {
     const trimmed = q.trim();
     if (trimmed.length === 0) return;
     setText(trimmed);
     setRan(trimmed);
-    setResult(matchIncident(trimmed, candidates));
+    const effective = consent !== 'unknown' ? consent : storedConsent();
+    if (effective !== consent && effective !== 'unknown') setConsent(effective);
+    if (!aiEnabled || preview || effective === 'denied') {
+      runKeyword(trimmed);
+      return;
+    }
+    if (effective === 'unknown') {
+      // 첫 검색 — 전송 전에 한 번 묻는다. 답을 받으면 이 질의를 그대로 이어간다.
+      setPending(trimmed);
+      setResult(null);
+      return;
+    }
+    void runWithAi(trimmed);
   }
 
   return (
@@ -123,17 +192,80 @@ export function ClaimSearch({
         </Card>
       ) : null}
 
+      {/* 최초 1회 동의 — 이후에는 모든 검색 문장을 AI 가 먼저 약관 어휘로 해석한다 */}
+      {pending !== null && consent === 'unknown' ? (
+        <Card className="flex flex-col gap-2.5">
+          <h2 className="text-[16px] font-bold">더 정확한 검색을 위해 AI 해석을 켤까요?</h2>
+          <p className="text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+            어떻게 적어도 알아듣도록, 입력하신 사고 문장을 AI(Google Gemini)가 보험 용어로
+            해석합니다. 문장에는 건강 정보가 포함될 수 있고, 해석 목적으로만 전송되며 저장되지
+            않습니다. 이름·증권번호는 보내지 않습니다. 한 번 동의하면 다음부터는 바로 검색됩니다.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                saveConsent('granted');
+                setPending(null);
+                void runWithAi(pending);
+              }}
+            >
+              동의하고 검색
+            </button>
+            <button
+              type="button"
+              className="rounded-[12px] px-3 py-2 text-[14px] font-semibold"
+              style={{ background: 'var(--sub)', border: '1px solid var(--line)' }}
+              onClick={() => {
+                saveConsent('denied');
+                setPending(null);
+                runKeyword(pending);
+              }}
+            >
+              AI 없이 검색
+            </button>
+          </div>
+        </Card>
+      ) : null}
+
+      {interpreting ? (
+        <Card className="flex items-center gap-3 !py-6">
+          <span className="nc-tilt inline-flex">
+            <Beoni pose="search" height={40} />
+          </span>
+          <span className="text-[15px]" style={{ color: 'var(--ink-2)' }}>
+            문장을 해석하는 중
+            <span className="nc-dot" style={{ animationDelay: '0s' }}>.</span>
+            <span className="nc-dot" style={{ animationDelay: '0.2s' }}>.</span>
+            <span className="nc-dot" style={{ animationDelay: '0.4s' }}>.</span>
+          </span>
+        </Card>
+      ) : null}
+
       {result?.kind === 'unknown' ? <UnknownResult /> : null}
       {result?.kind === 'matched' ? (
         <MatchedResult result={result} citation={citations[result.rule.id] ?? null} />
       ) : null}
 
-      {/* 규칙이 못 잡았거나 보유 담보가 없으면, 약관 조항을 AI 로 직접 대조하는 2차 경로를 연다.
-          예시 데이터(preview)에는 붙이지 않는다 — 예시 가구의 약관은 없다. */}
+      {/* 규칙이 못 잡았거나 보유 담보가 없으면, 약관 조항을 AI 로 직접 대조하는 2차 경로.
+          이미 동의했으면 버튼 없이 바로 돈다. 예시 데이터(preview)에는 붙이지 않는다. */}
       {aiEnabled &&
       !preview &&
       (result?.kind === 'unknown' || (result?.kind === 'matched' && result.noCoverage)) ? (
-        <AiAnalyze key={ran} text={ran} />
+        <AiAnalyze key={ran} text={ran} normalized={normalized} autoRun={consent === 'granted'} />
+      ) : null}
+
+      {/* AI 를 껐던 사용자가 마음을 바꿀 길 */}
+      {aiEnabled && !preview && consent === 'denied' ? (
+        <button
+          type="button"
+          className="text-left text-[13px] underline"
+          style={{ color: 'var(--ink-3)' }}
+          onClick={() => saveConsent('granted')}
+        >
+          AI 해석이 꺼져 있어요 — 다시 켜기
+        </button>
       ) : null}
 
       {/* 결과를 다 본 뒤에 연결을 권한다. 앞에 세우지 않는다. */}

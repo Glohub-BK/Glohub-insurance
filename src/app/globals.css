@@ -475,6 +475,14 @@ body {
   80%, 100% { opacity: 0.2; }
 }
 
+/* 생각 중 — 갸우뚱. 로딩 화면의 캐릭터가 멈춰 보이면 앱이 죽은 줄 안다. */
+@keyframes nc-tilt {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-7deg) translateY(-3px); }
+  75% { transform: rotate(7deg) translateY(-3px); }
+}
+.nc-tilt { animation: nc-tilt 1.8s ease-in-out infinite; transform-origin: 50% 85%; }
+
 .nc-bob { animation: nc-bob 3.4s ease-in-out infinite; }
 .nc-in { animation: nc-fade-in 0.45s ease-out both; }
 
@@ -530,7 +538,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nc-bob, .nc-in, .nc-dot { animation: none; }
+  .nc-bob, .nc-in, .nc-dot, .nc-tilt { animation: none; }
   .nc-splash { transition: none; }
 }
 

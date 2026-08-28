@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Card, Icon, ICONS, Pill, shortWon } from '../_components/ui';
 import { Beoni } from '../_components/brand';
@@ -32,10 +32,29 @@ type Finding = {
 
 type Analysis = { findings: Finding[]; summary: string; clausesSearched: number; clausesTotal: number };
 
-export function AiAnalyze({ text }: { text: string }) {
+export function AiAnalyze({
+  text,
+  normalized,
+  autoRun = false,
+}: {
+  text: string;
+  /** AI 해석기가 약관 어휘로 재서술한 문장. 조항 검색 정확도를 올린다. */
+  normalized?: string;
+  /** 사용자가 AI 해석에 이미 동의한 상태 — 버튼 없이 바로 분석한다. */
+  autoRun?: boolean;
+}) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [data, setData] = useState<Analysis | null>(null);
   const [error, setError] = useState('');
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (autoRun && !started.current) {
+      started.current = true;
+      void run();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun]);
 
   async function run() {
     setState('loading');
@@ -44,7 +63,7 @@ export function AiAnalyze({ text }: { text: string }) {
       const res = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, normalized }),
       });
       const body = (await res.json()) as Analysis & { error?: string };
       if (!res.ok) {
@@ -83,9 +102,15 @@ export function AiAnalyze({ text }: { text: string }) {
   if (state === 'loading') {
     return (
       <Card className="flex items-center gap-3 !py-6">
-        <Beoni pose="search" height={40} />
+        {/* 멈춘 것처럼 보이면 앱이 죽은 줄 안다 — 캐릭터가 갸우뚱하며 기다린다 */}
+        <span className="nc-tilt inline-flex">
+          <Beoni pose="search" height={40} />
+        </span>
         <span className="text-[15px]" style={{ color: 'var(--ink-2)' }}>
-          약관 조항을 대조하고 있어요…
+          약관 조항을 대조하고 있어요
+          <span className="nc-dot" style={{ animationDelay: '0s' }}>.</span>
+          <span className="nc-dot" style={{ animationDelay: '0.2s' }}>.</span>
+          <span className="nc-dot" style={{ animationDelay: '0.4s' }}>.</span>
         </span>
       </Card>
     );
