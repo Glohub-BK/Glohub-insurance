@@ -608,16 +608,27 @@ function ClauseCard({ citation, fallback }: { citation: ClauseCitation | null; f
   return (
     <Card>
       <h2 className="text-[16px] font-semibold">판단 근거 — 약관 원문</h2>
-      <p
-        className="quotecard mt-2.5"
+      {/* 펼쳐도 페이지가 길어지지 않는다 — 카드 안에서 스크롤로 읽는다.
+          긴 조항이 화면 전체를 밀어내면 아래의 서류·기한 안내가 파묻힌다. */}
+      <div
+        className="mt-2.5"
         style={
-          open || !long
-            ? undefined
-            : { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+          open
+            ? { maxHeight: 260, overflowY: 'auto', overscrollBehavior: 'contain' }
+            : undefined
         }
       >
-        {body}
-      </p>
+        <p
+          className="quotecard"
+          style={
+            open || !long
+              ? undefined
+              : { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+          }
+        >
+          {body}
+        </p>
+      </div>
       {long ? (
         <button
           type="button"
@@ -625,7 +636,7 @@ function ClauseCard({ citation, fallback }: { citation: ClauseCitation | null; f
           style={{ color: 'var(--brand-ink)' }}
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? '접기' : '원문 전체 보기'}
+          {open ? '접기' : '원문 전체 보기 (스크롤)'}
         </button>
       ) : null}
       {citation ? (

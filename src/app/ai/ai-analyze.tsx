@@ -184,7 +184,14 @@ export function AiAnalyze({
           {/* 근거 조항 — 서버가 원문 대조를 통과시킨 인용만 온다 */}
           <blockquote
             className="rounded-[10px] px-3.5 py-3 text-[14px] leading-relaxed"
-            style={{ background: 'var(--sub)', borderLeft: '3px solid var(--brand)' }}
+            style={{
+              background: 'var(--sub)',
+              borderLeft: '3px solid var(--brand)',
+              // 인용이 길어도 카드가 화면을 밀어내지 않는다 — 안에서 스크롤.
+              maxHeight: 220,
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+            }}
           >
             “{f.quote}”
             <footer className="mt-1.5 text-[13px]" style={{ color: 'var(--ink-3)' }}>
