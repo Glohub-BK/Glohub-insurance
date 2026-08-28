@@ -166,8 +166,16 @@ export function selectClauses(text: string, clauses: ClauseInput[], limit = 12):
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  return scored.slice(0, limit).map((s) => s.c);
+  if (scored.length > 0) return scored.slice(0, limit).map((s) => s.c);
+
+  // 어휘가 하나도 안 겹치면(「강아지가 물었어요」는 약관 어디에도 없다) 핵심 조항으로
+  // 대신 채운다 — 무엇을 보상하고 무엇을 면책하는지 적힌 조항이 판단의 뼈대다.
+  // 임베딩 검색을 붙이기 전까지의 안전망이다.
+  return clauses.filter((c) => CORE_CLAUSE.test(`${c.title ?? ''} ${c.body.slice(0, 80)}`)).slice(0, limit);
 }
+
+/** 담보의 뼈대 조항 — 보상하는 손해·보험금 지급사유·면책. */
+const CORE_CLAUSE = /보상하는\s*손해|지급사유|보상하지\s*아니|보상하지\s*않|배상책임/;
 
 const MAX_CLAUSE_CHARS = 700;
 

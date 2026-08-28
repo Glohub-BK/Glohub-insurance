@@ -25,6 +25,18 @@ export const metadata = { title: '약관 보관함' };
  * 저작물이라 우리가 사본을 만들어 뿌릴 자리가 아니다. 공식 공시실로 보내되,
  * 상품명을 복사해 주고 링크를 열어 **붙여넣기 한 번**으로 끝나게 한다.
  */
+/** 절차 번호 동그라미. 순서가 있는 일은 순서로 보여야 한다. */
+function StepNum({ n }: { n: number }) {
+  return (
+    <span
+      className="mt-0.5 grid size-[22px] flex-none place-items-center rounded-full text-[12px] font-bold text-white"
+      style={{ background: 'var(--brand-grad)' }}
+    >
+      {n}
+    </span>
+  );
+}
+
 function bytesLabel(n: number): string {
   if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)}MB`;
   return `${Math.max(1, Math.round(n / 1024))}KB`;
@@ -175,18 +187,46 @@ export default async function TermsPage() {
               </a>
             ))}
 
-            {/* 상태 3 — 아무도 안 올렸다. 여기서만 사용자에게 부탁한다. */}
+            {/* 상태 3 — 아무도 안 올렸다. 여기서만 사용자에게 부탁하되,
+                버튼을 나란히 두지 않고 순서 있는 절차로 보여준다.
+                "무작정 넣으라"는 화면은 아무도 못 따라온다. */}
             {clauseCount === 0 ? (
-              <span className="text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                이 상품 약관은 아직 없어요. 한 번만 올려주시면{' '}
-                <b className="font-semibold">같은 상품에 가입한 다른 분들도</b> 다시 받지 않아도 됩니다.
-              </span>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-2">
-              <OpenDisclosure url={disclosure.url} term={term} hint={disclosure.hint} />
-              <UploadTerms policyId={p.id} label={mine.length > 0 ? '다른 약관 추가' : '약관 올리기'} />
-            </div>
+              <ol className="flex flex-col gap-3">
+                <li className="flex items-start gap-2.5">
+                  <StepNum n={1} />
+                  <span className="min-w-0 flex-1">
+                    <b className="block text-[14px] font-semibold">보험사 공시실에서 약관 PDF 받기</b>
+                    <span className="mb-2 block text-[13px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                      버튼을 누르면 상품명이 복사되고 공시실이 열려요. 검색창에 붙여넣고, 여러 버전이
+                      보이면 <b className="font-semibold">가입 시기와 가까운 판매시기</b>의 약관을 받으세요.
+                    </span>
+                    <OpenDisclosure url={disclosure.url} term={term} hint={disclosure.hint} />
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <StepNum n={2} />
+                  <span className="min-w-0 flex-1">
+                    <b className="block text-[14px] font-semibold">받은 PDF를 여기로 올리기</b>
+                    <span className="mb-2 block text-[13px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                      휴대폰이면 다운로드 폴더에, PC면 브라우저가 저장한 곳에 있어요.
+                    </span>
+                    <UploadTerms policyId={p.id} label="약관 올리기" />
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <StepNum n={3} />
+                  <span className="min-w-0 flex-1 text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+                    <b className="font-semibold">끝.</b> 조항을 자동으로 읽어 AI 청구 진단의 근거로 쓰고,
+                    같은 상품 가입자들도 다시 받을 필요가 없어져요.
+                  </span>
+                </li>
+              </ol>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <OpenDisclosure url={disclosure.url} term={term} hint={disclosure.hint} />
+                <UploadTerms policyId={p.id} label={mine.length > 0 ? '다른 약관 추가' : '약관 올리기'} />
+              </div>
+            )}
           </Card>
         );
       })}

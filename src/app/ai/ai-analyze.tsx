@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, Icon, ICONS, Pill, shortWon } from '../_components/ui';
 import { Beoni } from '../_components/brand';
 
@@ -29,7 +30,7 @@ type Finding = {
   clause: { articleLabel: string; title: string | null; source: string };
 };
 
-type Analysis = { findings: Finding[]; summary: string; clausesSearched: number };
+type Analysis = { findings: Finding[]; summary: string; clausesSearched: number; clausesTotal: number };
 
 export function AiAnalyze({ text }: { text: string }) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -105,9 +106,13 @@ export function AiAnalyze({ text }: { text: string }) {
           </p>
         ) : null}
         <p className="note">
-          조항 {data.clausesSearched}건을 대조한 결과입니다. 약관 보관함에 약관이 없으면 분석
-          대상도 없습니다 — 내 정보 → 약관 보관함에서 추가할 수 있어요.
+          {data.clausesTotal === 0
+            ? '약관 보관함이 비어 있어 대조할 조항이 없습니다. 보관함에서 안내에 따라 약관 PDF를 추가하면 AI가 조항을 근거로 분석할 수 있어요.'
+            : `보관함의 조항 중 ${data.clausesSearched}건을 대조한 결과입니다. 다른 표현으로 다시 적어보거나, 해당 상품의 약관이 보관함에 있는지 확인해보세요.`}
         </p>
+        <Link href="/terms" className="btn btn-primary">
+          약관 보관함 열기 — 받는 법도 안내해드려요
+        </Link>
       </Card>
     );
   }

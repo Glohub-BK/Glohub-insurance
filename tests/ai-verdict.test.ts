@@ -178,3 +178,24 @@ describe('개인정보처리방침 — AI 위탁 고지', () => {
     expect(privacy).toContain('버튼을 누르기 전에는 어떤 정보도 전송되지 않습니다');
   });
 });
+
+describe('selectClauses — 어휘가 안 겹칠 때의 안전망', () => {
+  const clauses: ClauseInput[] = [
+    CLAUSE, // 배상책임 — 핵심 조항
+    { ...CLAUSE, articleLabel: '제5조', title: '보험금의 지급사유', body: '회사는 다음 사유가 발생한 때 보험금을 지급합니다.' },
+    { ...CLAUSE, articleLabel: '제20조', title: '보험료 납입', body: '계약자는 보험료를 납입기일까지 납입하여야 합니다.' },
+  ];
+
+  it('겹치는 어휘가 없으면 핵심 조항(보상·지급사유·배상책임)으로 채운다', () => {
+    // 「강아지」「물었」은 어느 조항에도 없다 — 그래도 판단의 뼈대는 보낸다.
+    const picked = selectClauses('강아지가 이웃을 물었어요', clauses);
+    expect(picked.length).toBeGreaterThan(0);
+    expect(picked.map((c) => c.articleLabel)).toContain('제3조');
+    expect(picked.map((c) => c.articleLabel)).toContain('제5조');
+    expect(picked.map((c) => c.articleLabel)).not.toContain('제20조');
+  });
+
+  it('조항이 아예 없으면 빈 배열 — 지어낼 재료를 주지 않는다', () => {
+    expect(selectClauses('강아지가 이웃을 물었어요', [])).toHaveLength(0);
+  });
+});

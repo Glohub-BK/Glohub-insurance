@@ -97,6 +97,7 @@ export async function POST(request: Request) {
       })),
       summary: verdict.summary,
       clausesSearched: clauses.length,
+      clausesTotal: allClauses.length,
     });
   } catch (err) {
     if (err instanceof LlmError) {
