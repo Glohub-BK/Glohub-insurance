@@ -67,5 +67,7 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string> {
 
   // 워커를 닫지 않으면 스크립트가 끝나지 않는다.
   await task.destroy();
-  return pages.join('\n');
+  // 일부 PDF 는 폰트 매핑이 안 되는 글자를 NUL(0x00)로 뱉는다. Postgres 텍스트 컬럼은
+  // NUL 을 저장하지 못해 22021 로 죽는다 — 실제 약관 PDF 에서 나온 사고다.
+  return pages.join('\n').replace(/\u0000/g, '');
 }

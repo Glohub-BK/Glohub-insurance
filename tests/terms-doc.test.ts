@@ -96,3 +96,19 @@ describe('약관 원본 보관 경계', () => {
     expect(page).toContain('파일 사본을 배포하지 않습니다');
   });
 });
+
+describe('NUL(0x00) 방어 — Postgres 22021', () => {
+  // 실제 사고: 내생애든든종합보험 약관 PDF 의 추출 텍스트에 NUL 이 섞여
+  // term_clause 저장이 invalid byte sequence 로 죽었다.
+  it('pdf 추출이 NUL 을 걷어낸다', () => {
+    const src = readFileSync('src/lib/terms/pdf.ts', 'utf8');
+    expect(src).toContain("replace(/\\u0000/g, '')");
+  });
+
+  it('저장소도 한 번 더 걷어낸다 — 다른 경로 하나가 트랜잭션을 죽이면 안 된다', () => {
+    const src = readFileSync('src/lib/repo/terms-doc.ts', 'utf8');
+    expect(src).toContain('function stripNul');
+    expect(src).toContain('stripNul(c.body)');
+    expect(src).toContain('stripNul(input.title)');
+  });
+});

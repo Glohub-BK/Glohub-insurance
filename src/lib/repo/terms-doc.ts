@@ -86,6 +86,17 @@ export type SaveResult =
  * 같은 파일을 두 번 넣으면 조항이 중복되므로 내용 해시로 막는다. 이미 있으면 새로 넣지
  * 않고 기존 문서를 돌려준다 — 사용자에겐 실패가 아니라 "이미 들어 있다"이다.
  */
+/**
+ * Postgres 텍스트 컬럼은 NUL(0x00)을 저장하지 못한다 (22021).
+ * 추출 단계에서 걸러내지만, 이 저장소를 지나는 모든 텍스트에서 한 번 더 걷어낸다 —
+ * 다른 경로로 들어온 텍스트 하나가 트랜잭션 전체를 죽이면 안 된다.
+ */
+function stripNul(text: string): string;
+function stripNul(text: string | null): string | null;
+function stripNul(text: string | null): string | null {
+  return text === null ? null : text.replace(/\u0000/g, '');
+}
+
 export async function saveTermsDoc(input: {
   memberId: string;
   policyId: string | null;
@@ -123,11 +134,11 @@ export async function saveTermsDoc(input: {
       [
         input.memberId,
         input.policyId,
-        input.title,
+        stripNul(input.title),
         input.mime,
         input.bytes.byteLength,
-        input.insurerName,
-        input.productName,
+        stripNul(input.insurerName),
+        stripNul(input.productName),
         hash,
         // 같은 상품에 가입한 다른 사용자가 이 조항을 함께 쓰게 하는 열쇠.
         productKeyOf(input.insurerName, input.productName),
@@ -137,14 +148,14 @@ export async function saveTermsDoc(input: {
     await q(
       `insert into document_blob (document_id, bytes, byte_size, mime, file_name)
        values ($1, $2, $3, $4, $5)`,
-      [doc.id, Buffer.from(input.bytes), input.bytes.byteLength, input.mime, input.fileName],
+      [doc.id, Buffer.from(input.bytes), input.bytes.byteLength, input.mime, stripNul(input.fileName)],
     );
 
     for (const c of input.clauses) {
       await q(
         `insert into term_clause (document_id, ord, article_no, article_label, title, body)
          values ($1, $2, $3, $4, $5, $6)`,
-        [doc.id, c.ord, c.articleNo, c.articleLabel, c.title, c.body],
+        [doc.id, c.ord, c.articleNo, stripNul(c.articleLabel), stripNul(c.title), stripNul(c.body)],
       );
     }
     return doc.id;
