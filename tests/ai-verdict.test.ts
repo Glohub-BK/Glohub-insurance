@@ -224,3 +224,30 @@ describe('selectClauses — 핵심 조항은 폴백이 아니라 상시 동반',
     expect(selectClauses('아들이 장난감을 부서뜨렸어요', many, 12).length).toBeLessThanOrEqual(12);
   });
 });
+
+describe('coreWeight 를 통한 핵심 조항 우선순위 — 「회사의 손해배상책임」 오탐', () => {
+  it('일배책 조항이 보험사 의무 조항을 이긴다 — 실제로 44조가 인용됐던 사고', () => {
+    const clauses: ClauseInput[] = [
+      // 내생애든든의 엉뚱한 배상 조항 — 이런 것들이 8자리를 선점했었다
+      ...Array.from({ length: 10 }, (_, i) => ({
+        ...CLAUSE,
+        articleLabel: `${40 + i}.`,
+        title: '회사의 손해배상책임',
+        body: '회사는 계약과 관련하여 임직원, 보험 설계사 및 대리점의 책임있는 사유로 발생된 손해에 대하여 손해배상의 책임을 집니다.',
+      })),
+      // KB 의 진짜 일배책 조항
+      {
+        ...CLAUSE,
+        articleLabel: '제3조',
+        title: '보상하는 손해',
+        body: '회사는 피보험자가 일상생활 중 우연한 사고로 타인의 신체나 재물에 손해를 입혀 법률상 배상책임을 부담함으로써 입은 손해를 보상합니다.',
+        source: 'KB손해보험 · KB플러스운전자상해보험',
+      },
+    ];
+    const picked = selectClauses('강아지가 아이를 물었어요', clauses, 12);
+    const sources = picked.map((c) => c.source);
+    expect(sources).toContain('KB손해보험 · KB플러스운전자상해보험');
+    // 보험사 의무 조항은 아예 실리지 않는다
+    expect(picked.map((c) => c.title)).not.toContain('회사의 손해배상책임');
+  });
+});

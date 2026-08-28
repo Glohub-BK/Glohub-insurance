@@ -176,18 +176,30 @@ export function selectClauses(text: string, clauses: ClauseInput[], limit = 12):
   const picked = new Set(lexical);
   const core = clauses
     .filter((c) => !picked.has(c))
-    .map((c) => {
-      const head = `${c.title ?? ''} ${c.body.slice(0, 80)}`;
-      // 배상책임 조항을 앞세운다 — 일상 사고 질의의 대부분이 여기로 귀결된다.
-      const w = /배상책임/.test(head) ? 2 : CORE_CLAUSE.test(head) ? 1 : 0;
-      return { c, w };
-    })
+    .map((c) => ({ c, w: coreWeight(c) }))
     .filter((s) => s.w > 0)
     .sort((a, b) => b.w - a.w)
     .slice(0, Math.max(0, limit - lexical.length))
     .map((s) => s.c);
 
   return [...lexical, ...core];
+}
+
+/**
+ * 핵심 조항 가중치.
+ *
+ * "배상책임" 글자만 보고 2점을 주자, 「회사의 손해배상책임」(보험사 자신의 의무 조항)
+ * 같은 것들이 핵심 자리 8개를 선점해 정작 KB 의 가족일상생활배상책임 조항이 밀려났다 —
+ * 화면에 그 44조가 인용된 것이 증거였다. 담보 이름 계열을 정확히 가리키는 조항을
+ * 맨 앞에, 보험사 의무 조항은 아예 뒤로 보낸다.
+ */
+function coreWeight(c: ClauseInput): number {
+  const head = `${c.title ?? ''} ${c.body.slice(0, 120)}`;
+  // 보험사 자신의 책임·지연이자 조항은 사고 판단의 근거가 아니다.
+  if (/회사의\s*손해배상|회사는\s*계약과\s*관련하여\s*임직원/.test(head)) return 0;
+  if (/일상생활|가족일상|가족생활|생활배상|자녀배상/.test(head)) return 3;
+  if (/배상책임/.test(head)) return 2;
+  return CORE_CLAUSE.test(head) ? 1 : 0;
 }
 
 /** 담보의 뼈대 조항 — 보상하는 손해·보험금 지급사유·면책. */
