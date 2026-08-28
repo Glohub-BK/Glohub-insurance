@@ -10,6 +10,7 @@ import {
 } from '@/lib/domain/incident-match';
 import { BASIS_LABEL, BASIS_SUFFIX } from '@/lib/domain/coverage-basis';
 import { Beoni } from '../_components/brand';
+import { AiAnalyze } from './ai-analyze';
 import type { ClauseCitation } from '@/lib/repo/terms';
 import { Card, Disclaimer, Icon, ICONS, Pill, shortWon } from '../_components/ui';
 import { ConnectCard, PreviewNotice } from '../_components/connect';
@@ -28,6 +29,7 @@ export function ClaimSearch({
   initialQuery = '',
   preview = false,
   citations = {},
+  aiEnabled = false,
 }: {
   candidates: CoverageCandidate[];
   initialQuery?: string;
@@ -35,8 +37,11 @@ export function ClaimSearch({
   preview?: boolean;
   /** 사고 유형별로 내 약관에서 찾은 조항. 없으면 규칙 파일의 예시 문구를 쓴다. */
   citations?: Partial<Record<string, ClauseCitation>>;
+  /** 서버에 GEMINI_API_KEY 가 있을 때만 true. 예시 데이터에는 AI 를 붙이지 않는다. */
+  aiEnabled?: boolean;
 }) {
   const [text, setText] = useState(initialQuery);
+  const [ran, setRan] = useState(initialQuery.trim());
   const [result, setResult] = useState<MatchResult | null>(
     initialQuery.trim() ? matchIncident(initialQuery.trim(), candidates) : null,
   );
@@ -45,6 +50,7 @@ export function ClaimSearch({
     const trimmed = q.trim();
     if (trimmed.length === 0) return;
     setText(trimmed);
+    setRan(trimmed);
     setResult(matchIncident(trimmed, candidates));
   }
 
@@ -120,6 +126,14 @@ export function ClaimSearch({
       {result?.kind === 'unknown' ? <UnknownResult /> : null}
       {result?.kind === 'matched' ? (
         <MatchedResult result={result} citation={citations[result.rule.id] ?? null} />
+      ) : null}
+
+      {/* 규칙이 못 잡았거나 보유 담보가 없으면, 약관 조항을 AI 로 직접 대조하는 2차 경로를 연다.
+          예시 데이터(preview)에는 붙이지 않는다 — 예시 가구의 약관은 없다. */}
+      {aiEnabled &&
+      !preview &&
+      (result?.kind === 'unknown' || (result?.kind === 'matched' && result.noCoverage)) ? (
+        <AiAnalyze key={ran} text={ran} />
       ) : null}
 
       {/* 결과를 다 본 뒤에 연결을 권한다. 앞에 세우지 않는다. */}

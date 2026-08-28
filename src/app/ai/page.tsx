@@ -2,6 +2,7 @@ import { getCandidateView } from '@/lib/repo/view-data';
 import { getCurrentHousehold } from '@/lib/repo/household';
 import { getClauseCitations } from '@/lib/repo/terms';
 import { ClaimSearch } from './claim-search';
+import { isLlmConfigured } from '@/lib/llm/gemini';
 import { DataErrorCard } from '../_components/data-error';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,7 @@ export default async function AiPage({
       initialQuery={initialQuery}
       preview={mode === 'preview'}
       citations={citations}
+      aiEnabled={isLlmConfigured()}
     />
   );
 }
