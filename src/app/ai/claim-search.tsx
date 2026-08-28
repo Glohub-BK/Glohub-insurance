@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {
+  explainMatch,
   groupByPolicy,
   matchIncident,
   type CoverageCandidate,
@@ -245,7 +246,12 @@ export function ClaimSearch({
 
       {result?.kind === 'unknown' ? <UnknownResult /> : null}
       {result?.kind === 'matched' ? (
-        <MatchedResult result={result} citation={citations[result.rule.id] ?? null} />
+        <MatchedResult
+          result={result}
+          citation={citations[result.rule.id] ?? null}
+          queryText={ran}
+          candidates={candidates}
+        />
       ) : null}
 
       {/* 규칙이 못 잡았거나 보유 담보가 없으면, 약관 조항을 AI 로 직접 대조하는 2차 경로.
@@ -387,9 +393,13 @@ function PolicyCard({
 function MatchedResult({
   result,
   citation,
+  queryText,
+  candidates,
 }: {
   result: Extract<MatchResult, { kind: 'matched' }>;
   citation: ClauseCitation | null;
+  queryText: string;
+  candidates: CoverageCandidate[];
 }) {
   const { rule, coverages, related, noCoverage } = result;
 
@@ -413,6 +423,7 @@ function MatchedResult({
           </p>
         </Card>
         <RelatedCoverages items={related} />
+        <WhyNoCoverage text={queryText} candidates={candidates} />
         <ClauseCard citation={citation} fallback={rule.quote} />
         <ClaimGuide rule={rule} />
       </>
@@ -527,11 +538,96 @@ function RelatedCoverages({ items }: { items: MatchedCoverage[] }) {
  * 판단 근거. 내 약관에서 찾은 조항이 있으면 그것을 쓰고, 없을 때만 예시 문구를 쓰되
  * 반드시 예시라고 밝힌다 — 없는 근거를 있는 것처럼 보여주지 않는다.
  */
+
+const FATE_LABEL: Record<string, string> = {
+  direct: '✅ 직접 해당',
+  related: '참고로 분류됨',
+  'cause-mismatch': '참고 (원인 상충)',
+  'excluded-name': '제외 — 이름 규칙',
+  'excluded-kind': '제외 — 계약 종류',
+  'excluded-status': '제외 — 해지·소멸',
+  'out-of-category': '이 사고 유형의 대상 아님',
+};
+
+/**
+ * "담보가 없다"는 결론의 계산 근거를 그 자리에서 펼쳐 보인다.
+ *
+ * 결론만 던지면 사용자는 "일배책 있는데?" 라며 앱을 불신하고, 운영자는 스크린샷으로
+ * 추측한다 — 실제로 그 왕복을 여러 번 했다. 어떤 담보가 어떤 규칙에 걸려 어디로
+ * 갔는지 보여주면, 오판이면 그 줄이 바로 신고 내용이 된다.
+ */
+function WhyNoCoverage({ text, candidates }: { text: string; candidates: CoverageCandidate[] }) {
+  const [open, setOpen] = useState(false);
+  const ex = explainMatch(text, candidates);
+  if (!ex.ruleId) return null;
+  const rows = ex.rows.filter((r) => r.fate !== 'out-of-category');
+
+  return (
+    <Card flat>
+      <button
+        type="button"
+        className="flex w-full items-center justify-between text-left text-[14px] font-semibold"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>이렇게 판단했어요 — 담보별 상세</span>
+        <span style={{ color: 'var(--ink-3)' }}>{open ? '접기' : '펼치기'}</span>
+      </button>
+      {open ? (
+        <ul className="mt-2.5 flex flex-col gap-2">
+          {rows.length === 0 ? (
+            <li className="text-[13px]" style={{ color: 'var(--ink-3)' }}>
+              이 사고 유형이 보는 분류의 담보가 보장내역에 없습니다.
+            </li>
+          ) : (
+            rows.map((r, i) => (
+              <li key={i} className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+                <b className="font-semibold">{r.candidate.name}</b>
+                <span style={{ color: 'var(--ink-3)' }}>
+                  {' '}
+                  ({r.candidate.insurerName} · {r.candidate.contractKind ?? '종류 미상'}) —{' '}
+                  {FATE_LABEL[r.fate] ?? r.fate}
+                </span>
+                <span className="block" style={{ color: 'var(--ink-3)' }}>
+                  {r.detail}
+                </span>
+              </li>
+            ))
+          )}
+        </ul>
+      ) : null}
+    </Card>
+  );
+}
+
 function ClauseCard({ citation, fallback }: { citation: ClauseCitation | null; fallback: string }) {
+  // 약관 조항은 한 조가 수백 자다. 전문을 다 펼치면 화면이 근거에 파묻힌다 —
+  // 핵심 4줄만 보여주고, 원문 전체는 원하는 사람만 편다.
+  const [open, setOpen] = useState(false);
+  const body = citation ? citation.body : fallback;
+  const long = body.length > 160;
   return (
     <Card>
       <h2 className="text-[16px] font-semibold">판단 근거 — 약관 원문</h2>
-      <p className="quotecard mt-2.5">{citation ? citation.body : fallback}</p>
+      <p
+        className="quotecard mt-2.5"
+        style={
+          open || !long
+            ? undefined
+            : { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+        }
+      >
+        {body}
+      </p>
+      {long ? (
+        <button
+          type="button"
+          className="mt-1.5 self-start text-[13px] font-semibold underline"
+          style={{ color: 'var(--brand-ink)' }}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? '접기' : '원문 전체 보기'}
+        </button>
+      ) : null}
       {citation ? (
         <span className="quote-src">
           <Icon path={ICONS.doc} size={15} />
