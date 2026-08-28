@@ -100,3 +100,58 @@ describe('출처 표기', () => {
     expect(citationOf({ title: '약관.pdf', articleLabel: '제3조' })).toBe('약관.pdf · 제3조');
   });
 });
+
+describe('옛 손보 표기 「N. (제목)」 — 내생애든든 1404 실사례', () => {
+  // 이 약관은 제N조 표기가 없어 1,066개 조항 중 15개만 잡혔고,
+  // 그 15개마저 의료법 인용이었다.
+  const OLD_STYLE = [
+    '1. (목적)',
+    '이 보험계약(이하 ‘계약’이라 합니다)은 보험계약자와 보험회사 사이에 맺어집니다.',
+    '2. (용어의 정의)',
+    '이 계약에서 사용되는 용어의 정의는 다음과 같습니다.',
+    '3. (보험금의 지급사유) ····························· 12',
+    '5. (보험금을 지급하지 않는 사유)',
+    '회사는 다음 중 어느 한 가지의 경우에는 보험금을 지급하지 않습니다.',
+  ].join('\n');
+
+  it('점 표기 조항을 잡는다', () => {
+    const clauses = parseClauses(OLD_STYLE);
+    expect(clauses.map((c) => c.articleLabel)).toEqual(['1.', '2.', '5.']);
+    expect(clauses[0].title).toBe('목적');
+    expect(clauses[2].title).toBe('보험금을 지급하지 않는 사유');
+  });
+
+  it('목차의 점선 리더 줄은 조항이 아니다', () => {
+    const clauses = parseClauses(OLD_STYLE);
+    expect(clauses.map((c) => c.title)).not.toContain('보험금의 지급사유');
+  });
+
+  it('법령 인용 「제3조(의료기관)에 규정한」 은 조항 머리가 아니다', () => {
+    const text = [
+      '1. (보험금의 지급사유)',
+      '제3자는 의료법',
+      '제3조(의료기관)에 규정한 종합병원 소속 전문의 중에 정하며, 보험금',
+      '지급사유 판정에 드는 비용은 회사가 부담합니다.',
+    ].join('\n');
+    const clauses = parseClauses(text);
+    expect(clauses).toHaveLength(1);
+    expect(clauses[0].body).toContain('의료기관');
+  });
+
+  it('진짜 제N조 머리는 여전히 잡힌다 — 가정보장보험 형식 회귀 방지', () => {
+    const text = ['제3조(보험금의 지급사유)', '회사는 다음의 경우 보험금을 지급합니다.'].join('\n');
+    const clauses = parseClauses(text);
+    expect(clauses).toHaveLength(1);
+    expect(clauses[0].articleLabel).toBe('제3조');
+  });
+
+  it('괄호 없는 「1. 전자서명이라 함은」 나열 항목은 조항으로 쪼개지 않는다', () => {
+    const text = [
+      '2. (용어의 정의)',
+      '1. 전자서명이라 함은 서명자를 확인하는 정보를 말합니다.',
+      '2. 전자문서라 함은 정보처리시스템에 의하여 작성된 정보를 말합니다.',
+    ].join('\n');
+    const clauses = parseClauses(text);
+    expect(clauses).toHaveLength(1);
+  });
+});

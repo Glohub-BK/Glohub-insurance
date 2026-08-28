@@ -19,9 +19,25 @@ export type Clause = {
 /** '제 12 조', '제12조의2' 모두 잡는다. 줄 맨 앞에 있어야 조항 시작으로 본다. */
 const ARTICLE = /^제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*(?:[(（]([^)）]*)[)）])?/;
 
+/**
+ * 옛 손보 약관(2014년 프로미라이프 등)은 조항을 「3. (보험금의 지급사유)」로 적는다.
+ * 제N조 표기가 아예 없어서, 이 형식을 모르면 조항 1,066개짜리 약관에서 15개만 잡힌다 —
+ * 그 15개마저 의료법 인용이었다. 괄호 제목이 있어야 조항으로 본다.
+ * (괄호 없는 「1. 전자서명이라 함은…」 은 조항 안의 나열 항목이다)
+ */
+const DOT_ARTICLE = /^(\d{1,3})\.\s*[(（]([^)）]{1,60})[)）]/;
+
+/**
+ * 「제3조(의료기관)에 규정한…」 은 조항 시작이 아니라 다른 법령 **인용**이다.
+ * 닫는 괄호 바로 뒤에 조사가 붙으면 인용으로 본다. 진짜 머리는 제목으로 끝나거나
+ * ①·본문이 이어진다.
+ */
+const REFERENCE_TAIL = /^(에|의|을|를|와|과|로|은|는|및|또는|부터|까지|제\d)/;
+
 const NOISE = [
   /^[-–—]\s*\d+\s*[-–—]$/, // - 12 -
   /^\d{1,3}$/, // 쪽번호만 있는 줄
+  /·{3,}/, // 목차의 점선 리더 — 「3. (보험금의 지급사유) ····· 12」
   /^\s*$/,
 ];
 
@@ -63,8 +79,11 @@ export function parseClauses(raw: string): Clause[] {
   };
 
   for (const line of lines) {
-    const m = line.trim().match(ARTICLE);
-    if (m) {
+    const trimmed = line.trim();
+    const m = trimmed.match(ARTICLE);
+    // 제N조(제목) 뒤에 조사가 바로 붙으면 법령 인용이지 조항 머리가 아니다.
+    const isReference = m ? REFERENCE_TAIL.test(trimmed.slice(m[0].length).trimStart()) : false;
+    if (m && !isReference) {
       flush();
       const no = Number(m[1]);
       const sub = m[2] ? `의${m[2]}` : '';
@@ -73,7 +92,20 @@ export function parseClauses(raw: string): Clause[] {
         no: Number.isFinite(no) ? no : null,
         title: m[3]?.trim() || null,
         // 표제를 뗀 나머지가 본문 첫 줄이다.
-        lines: [line.trim().replace(ARTICLE, '').trim()],
+        lines: [trimmed.replace(ARTICLE, '').trim()],
+      };
+      continue;
+    }
+    const d = trimmed.match(DOT_ARTICLE);
+    if (d) {
+      flush();
+      const no = Number(d[1]);
+      current = {
+        // 원문 표기를 따른다 — 이 약관은 「3.」이 곧 조항 번호다.
+        label: `${no}.`,
+        no: Number.isFinite(no) ? no : null,
+        title: d[2].trim() || null,
+        lines: [trimmed.replace(DOT_ARTICLE, '').trim()],
       };
       continue;
     }
