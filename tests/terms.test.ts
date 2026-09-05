@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assessParse, citationOf, parseClauses } from '../src/lib/terms/parse';
-import { MIN_SCORE, pickClause, scoreClause } from '../src/lib/terms/match';
+import { MIN_SCORE, citationMustTerms, pickClause, scoreClause } from '../src/lib/terms/match';
 
 /**
  * 약관 파서가 틀리면 인용문이 통째로 엉킨다. 그 인용문이 곧 판단 근거이므로
@@ -210,5 +210,62 @@ describe('자동차 인용 갈래 — car-property / car-person', () => {
 
   it('갈래에 맞는 조항이 없으면 고르지 않는다 — 엉뚱한 인용 금지', () => {
     expect(pickClause('car-property', [personClause])).toBeNull();
+  });
+});
+
+describe('citationMustTerms — 조항 후보를 위치가 아니라 관련성으로 좁힌다', () => {
+  // 실사례: 「아이가 친구 안경을 깨뜨렸어요」의 근거로 44.(회사의 손해배상책임) 이 인용됐다.
+  // 원인은 점수가 아니라 후보 수집이었다 — `order by ord limit 400` 이 모든 약관의
+  // 앞부분만 남겨, 뒤쪽 특별약관(일상생활배상책임)은 한 건도 올라오지 못했다.
+  it('모든 규칙의 must 어휘를 모은다', () => {
+    const terms = citationMustTerms();
+    expect(terms).toContain('배상책임');
+    expect(terms).toContain('골절');
+    expect(terms).toContain('통원');
+    expect(terms).toContain('누수');
+  });
+
+  it('짧은 말이 긴 말을 덮으면 긴 쪽은 버린다 — 같은 조항을 두 번 걸 이유가 없다', () => {
+    const terms = citationMustTerms();
+    expect(terms).toContain('배상책임');
+    expect(terms).not.toContain('법률상 배상책임');
+    expect(terms).not.toContain('법률상의 배상책임');
+  });
+
+  it('중복이 없다', () => {
+    const terms = citationMustTerms();
+    expect(new Set(terms).size).toBe(terms.length);
+  });
+
+  it('일상생활배상책임 조항이 이 필터를 통과한다 — 통과하지 못하면 근거가 사라진다', () => {
+    const body =
+      '회사는 피보험자가 일상생활로 인한 우연한 사고로 타인의 재물을 훼손하여 법률상의 배상책임을 부담함으로써 입은 손해를 보상합니다.';
+    expect(citationMustTerms().some((t) => body.includes(t))).toBe(true);
+  });
+});
+
+describe('일상생활배상책임 조항이 후보에 있으면 반드시 이긴다', () => {
+  // 후보에만 들어오면 점수는 이미 올바르게 매겨진다(10점 vs 7점).
+  // 그러니 화면에 엉뚱한 조항이 떴다는 것은 곧 후보 수집이 잘못됐다는 뜻이다.
+  const companyLiability = {
+    title: '(회사의 손해배상책임)',
+    body: '회사는 계약과 관련하여 임직원, 보험 설계사 및 대리점의 책임있는 사유로 계약자, 피보험자 및 보험수익자에게 발생된 손해에 대하여 관계 법령 등에 따라 손해배상의 책임을 집니다.',
+  };
+  const dailyLife = {
+    title: '(일상생활 중 배상책임)',
+    body: '회사는 피보험자가 보험기간 중 일상생활로 인한 우연한 사고로 타인의 재물을 없애거나 훼손하여 법률상의 배상책임을 부담함으로써 입은 손해를 보상하여 드립니다.',
+  };
+
+  it('둘이 함께 있으면 일상생활배상책임을 고른다', () => {
+    expect(pickClause('liability-damage', [companyLiability, dailyLife])?.clause.title).toBe(
+      '(일상생활 중 배상책임)',
+    );
+  });
+
+  it('회사의 손해배상책임만 있으면 그것이라도 고른다 — 후보가 없어서 생긴 오인이다', () => {
+    // 이 조항 자체가 문턱을 넘는 것은 사실이다. 문제는 더 나은 후보가 없었다는 점이다.
+    expect(pickClause('liability-damage', [companyLiability])?.clause.title).toBe(
+      '(회사의 손해배상책임)',
+    );
   });
 });

@@ -114,3 +114,20 @@ export function pickClause<T extends Pick<Clause, 'body' | 'title'>>(
 export function citationKeys(): CitationKey[] {
   return Object.keys(SPECS) as CitationKey[];
 }
+
+/**
+ * 모든 규칙의 must 어휘. 조항 후보를 **DB 단계에서** 좁히는 데 쓴다.
+ *
+ * 예전에는 가구의 조항을 `order by ord limit 400` 으로 잘라서 가져왔다. 그런데 ord 는
+ * 문서 안에서의 순서라, 전체를 ord 로 정렬하면 **모든 약관의 앞부분만** 남는다.
+ * 일상생활배상책임 같은 특별약관은 약관 뒤쪽에 있어 한 건도 후보에 들어오지 못했다 —
+ * 그래서 「(회사의 손해배상책임)」 같은 앞쪽 조항이 근거로 인용됐다.
+ *
+ * 자를 거라면 위치가 아니라 **관련성**으로 잘라야 한다. 규칙이 늘면 이 목록도 따라 는다.
+ */
+export function citationMustTerms(): string[] {
+  const all = citationKeys().flatMap((key) => SPECS[key].must);
+  // 짧은 말이 긴 말을 포함하면 긴 쪽은 버린다 ('배상책임' 이 '법률상 배상책임' 을 덮는다).
+  const sorted = [...new Set(all)].sort((a, b) => a.length - b.length);
+  return sorted.filter((term, i) => !sorted.slice(0, i).some((shorter) => term.includes(shorter)));
+}

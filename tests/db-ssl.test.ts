@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeConnection, poolerUserLooksWrong, sslOptionsFor } from '@/lib/db';
+import { describeConnection, diagnoseCredentials, poolerUserLooksWrong, sslOptionsFor } from '@/lib/db';
 
 describe('sslOptionsFor', () => {
   it('로컬 Postgres 는 TLS 를 끈다', () => {
@@ -42,6 +42,29 @@ describe('describeConnection', () => {
     expect(s).toContain('host=aws-1-ap-northeast-2.pooler.supabase.com');
     expect(s).toContain('port=6543');
     expect(s).toContain('db=postgres');
+  });
+
+  // 배포된 곳과 내 PC 의 값이 같은지 확인할 방법이 없어 왕복이 길어졌다.
+  // 두 곳의 로그 한 줄을 나란히 놓으면 어디가 다른지 바로 보인다.
+  it('비밀번호 길이를 실어 두 환경을 대조할 수 있게 한다', () => {
+    const s = describeConnection(
+      `postgresql://postgres.abc:${PW}@x.pooler.supabase.com:6543/postgres`,
+    );
+    expect(s).toContain(`pw=${PW.length}자`);
+  });
+
+  it('비밀번호가 없으면 길이 대신 없다고 말한다', () => {
+    expect(describeConnection('postgresql://postgres.abc@x.pooler.supabase.com:6543/postgres')).toContain(
+      'pw=(없음)',
+    );
+  });
+
+  it('인코딩된 비밀번호는 디코딩한 실제 길이를 센다', () => {
+    // p@ss/word#1 은 11자다. %40 을 3자로 세면 두 환경 비교가 엇나간다.
+    const s = describeConnection(
+      `postgresql://postgres.abc:${encodeURIComponent('p@ss/word#1')}@x.pooler.supabase.com:6543/postgres`,
+    );
+    expect(s).toContain('pw=11자');
   });
 
   it('비밀번호는 절대 새어 나가지 않는다 — 이 로그는 남는다', () => {
@@ -94,5 +117,54 @@ describe('poolerUserLooksWrong', () => {
 
   it('깨진 문자열은 조용히 넘긴다 — 여기서 죽으면 진짜 오류가 가려진다', () => {
     expect(poolerUserLooksWrong('이건 URL 이 아니다')).toBe(false);
+  });
+});
+
+describe('diagnoseCredentials — 28P01 원인 좁히기', () => {
+  const BASE = 'postgresql://postgres.abcdefghijklmnop:';
+  const HOST = '@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres';
+
+  it('# 가 들어 있으면 비밀번호가 잘린다고 알려준다', () => {
+    // Supabase 가 만들어주는 비밀번호에 # 가 섞이면 URL 에서 뒤가 통째로 날아간다.
+    // 사용자는 제대로 붙여넣었는데 서버는 짧아진 값을 받는다.
+    const hint = diagnoseCredentials(`${BASE}pa#ssword${HOST}`);
+    expect(hint).toMatch(/잘립니다/);
+    expect(hint).toMatch(/%23/);
+  });
+
+  it('? 도 같은 함정이다', () => {
+    expect(diagnoseCredentials(`${BASE}pa?ssword${HOST}`)).toMatch(/잘립니다/);
+  });
+
+  it('비밀번호가 비어 있으면 그렇게 말한다', () => {
+    expect(diagnoseCredentials(`${BASE}${HOST}`)).toMatch(/비밀번호가 없습니다/);
+  });
+
+  it('안내용 대괄호가 남아 있으면 짚어준다', () => {
+    expect(diagnoseCredentials(`${BASE}[YOUR-PASSWORD]${HOST}`)).toMatch(/안내용 문구/);
+  });
+
+  it('pooler 인데 ref 가 없으면 Direct 문자열을 붙여넣은 것이다', () => {
+    const hint = diagnoseCredentials(
+      'postgresql://postgres:secret@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres',
+    );
+    expect(hint).toMatch(/프로젝트 ref/);
+  });
+
+  it('형식이 멀쩡하면 길이만 알려주고 남은 후보를 준다 — 비밀번호는 절대 싣지 않는다', () => {
+    const secret = 'sup3rSecretValue';
+    const hint = diagnoseCredentials(`${BASE}${secret}${HOST}`);
+    expect(hint).toContain(`${secret.length}자`);
+    expect(hint).not.toContain(secret);
+    expect(hint).toMatch(/재설정|덮어쓰고/);
+  });
+
+  it('URL 로 해석되지 않으면 형식을 의심하라고 한다', () => {
+    expect(diagnoseCredentials('그냥 문자열')).toMatch(/해석하지 못했습니다/);
+  });
+
+  it('퍼센트 인코딩된 비밀번호는 정상으로 본다', () => {
+    // %23 은 이미 올바르게 인코딩된 # 이므로 경고 대상이 아니다.
+    expect(diagnoseCredentials(`${BASE}pa%23ssword${HOST}`)).toMatch(/형식은 정상/);
   });
 });

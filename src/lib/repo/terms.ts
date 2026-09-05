@@ -1,5 +1,5 @@
 import { query } from '../db';
-import { citationKeys, pickClause, type CitationKey } from '../terms/match';
+import { citationKeys, citationMustTerms, pickClause, type CitationKey } from '../terms/match';
 import { citationOf } from '../terms/parse';
 
 /**
@@ -42,7 +42,10 @@ type Row = {
  * (`document_blob` 은 이 쿼리에 없다). 출처를 밝힌 부분 인용과 파일 사본 배포는
  * 다른 문제다.
  */
-export async function listHouseholdClauses(householdId: string, limit = 400): Promise<Row[]> {
+export async function listHouseholdClauses(householdId: string, limit = 2000): Promise<Row[]> {
+  // 규칙이 근거로 삼을 수 있는 어휘가 하나라도 든 조항만 가져온다.
+  // 위치(ord)로 자르면 특별약관이 통째로 사라진다 — citationMustTerms 주석 참고.
+  const patterns = citationMustTerms().map((term) => `%${term}%`);
   return query<Row>(
     `select c.article_label, c.title, c.body,
             d.insurer_name, d.product_name, d.title as doc_title
@@ -61,9 +64,10 @@ export async function listHouseholdClauses(householdId: string, limit = 400): Pr
                select p.product_key from policy p join member pm on pm.id = p.member_id
                 where pm.household_id = $1 and p.product_key is not null))
         )
+        and (c.title ilike any($2::text[]) or c.body ilike any($2::text[]))
       order by c.ord
-      limit $2`,
-    [householdId, limit],
+      limit $3`,
+    [householdId, patterns, limit],
   );
 }
 
