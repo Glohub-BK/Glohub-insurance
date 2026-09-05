@@ -187,3 +187,28 @@ describe('assessParse — 파싱 품질 자가 진단', () => {
     expect(assessParse('아무 조항도 없는 텍스트', []).suspicious).toBe(true);
   });
 });
+
+describe('자동차 인용 갈래 — car-property / car-person', () => {
+  const propertyClause = {
+    title: '대물배상',
+    body: '피보험자가 피보험자동차의 사고로 다른 사람의 재물을 없애거나 훼손하여 법률상 손해배상책임을 짐으로써 입은 손해를 보상합니다.',
+  };
+  const personClause = {
+    title: '자기신체사고',
+    body: '피보험자가 피보험자동차의 사고로 인하여 죽거나 다친 때 그로 인한 손해를 보상합니다. 상해 또는 사망 시 보험금을 지급합니다.',
+  };
+
+  it('물적 갈래는 대물배상 조항을 고른다', () => {
+    const best = pickClause('car-property', [propertyClause, personClause]);
+    expect(best?.clause.title).toBe('대물배상');
+  });
+
+  it('인명 갈래는 자기신체사고 조항을 고른다', () => {
+    const best = pickClause('car-person', [propertyClause, personClause]);
+    expect(best?.clause.title).toBe('자기신체사고');
+  });
+
+  it('갈래에 맞는 조항이 없으면 고르지 않는다 — 엉뚱한 인용 금지', () => {
+    expect(pickClause('car-property', [personClause])).toBeNull();
+  });
+});

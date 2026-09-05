@@ -34,6 +34,8 @@ export type MatrixCell = {
 export type PolicyRow = {
   id: string;
   member_name: string;
+  /** 피보험자명. 조회자(계약자)와 다를 수 있다 — 가족 귀속의 열쇠다. */
+  insured_name: string | null;
   contract_kind: string;
   insurer_name: string;
   product_name: string;
@@ -85,7 +87,7 @@ export async function getCoverageMatrix(householdId: string): Promise<MatrixCell
 
 export async function getPolicies(householdId: string): Promise<PolicyRow[]> {
   return query<PolicyRow>(
-    `select id, member_name, contract_kind, insurer_name, product_name, policy_no,
+    `select id, member_name, insured_name, contract_kind, insurer_name, product_name, policy_no,
             status, start_date, end_date, premium, payment_cycle,
             coverage_count, terms_doc_count
      from policy_summary
@@ -168,6 +170,7 @@ export async function getCoverageCandidates(householdId: string) {
   return query<{
     policyId: string;
     memberName: string;
+    insuredName: string | null;
     insurerName: string;
     productName: string;
     contractKind: string;
@@ -178,6 +181,7 @@ export async function getCoverageCandidates(householdId: string) {
   }>(
     `select p.id            as "policyId",
             m.display_name  as "memberName",
+            p.insured_name  as "insuredName",
             p.insurer_name  as "insurerName",
             p.product_name  as "productName",
             p.contract_kind as "contractKind",

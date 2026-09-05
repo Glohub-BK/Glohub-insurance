@@ -222,6 +222,48 @@ export type MatchResult =
 
 const ACTIVE_STATUSES_EXCLUDED = ['해지', '소멸', '실효'];
 
+/**
+ * 교통·운전 **전용** 담보 이름.
+ *
+ * 교통사고처리지원금·무보험차상해는 차가 개입한 사고에서만 의미가 있는데,
+ * 운전자보험은 계약 종류가 'car' 가 아니라 장기보험(flat_rate)이라 excludeKinds 로는
+ * 못 거른다. 실사례: 「보도블럭에 넘어져 다리가 부러졌어」에 교통사고처리지원금
+ * 2억이 직접 해당으로 올라왔다 — 이름의 '사고' 가 direct 패턴에 걸린 탓이다.
+ */
+const TRAFFIC_ONLY_NAME =
+  /교통사고|무보험차|자동차부상|자동차사고|운전자|뺑소니|스쿨존|어린이보호구역|형사합의|대중교통/;
+
+/** 사고 문장에 차·운전 정황이 있는가. 있으면 교통 전용 담보도 후보다. */
+const TRAFFIC_CONTEXT =
+  /자동차|차량|승용차|화물차|오토바이|이륜차|버스|택시|전철|지하철|운전|교통|추돌|주차|뺑소니|치였|치여|치임|음주운전|횡단보도|차에|차가|차와/;
+
+export function hasTrafficContext(text: string): boolean {
+  return TRAFFIC_CONTEXT.test(normalizeQuery(text));
+}
+
+/**
+ * 자동차 사고의 두 갈래: 사람이 다쳤는가(대인·자손), 물건만 상했는가(대물·자차).
+ *
+ * 「주차하다 옆차를 긁었어요」에 대인배상·형사합의·교통사고처리지원금까지 전부
+ * 직접 해당으로 올라왔다 — 물적 사고에는 물적 담보(대물배상·자기차량손해)가 앞이고,
+ * 인명 쪽 담보는 참고로 물린다. 지우지 않는 이유: 나중에 "알고 보니 상대가 다쳤다"가
+ * 흔해서다. 판단은 사람이 한다.
+ */
+const PERSON_INJURY_CONTEXT = /치었|치여|치임|다쳤|다치|부상|다리|사람|보행자|행인|인명|사망|골절|입원/;
+
+export function hasPersonInjuryContext(text: string): boolean {
+  return PERSON_INJURY_CONTEXT.test(normalizeQuery(text));
+}
+
+/** 자동차보험의 인명 쪽 담보 이름. 물적 사고에서는 참고 목록으로 내린다. */
+const CAR_PERSON_SIDE_NAME = /대인|자기신체|자동차상해|무보험차|형사합의|벌금|변호사|처리지원금|부상/;
+
+function carSideMismatch(ruleId: string, name: string, text: string): boolean {
+  if (ruleId !== 'car') return false;
+  if (hasPersonInjuryContext(text)) return false;
+  return CAR_PERSON_SIDE_NAME.test(squash(name));
+}
+
 export function normalizeQuery(text: string): string {
   return (text ?? '').replace(/\s/g, '');
 }
@@ -277,6 +319,15 @@ export function matchIncident(
     // 단, 자동차보험에 특약으로 붙은 일상생활배상책임은 allow 가 살린다.
     .filter(
       (c) => allowed(c) || !(rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind)),
+    )
+    // 교통 전용 담보는 사고에 차·운전 정황이 있을 때만 후보다.
+    // 자동차 사고 규칙(driver 카테고리)은 규칙 자체가 교통이므로 가드 대상이 아니다.
+    .filter(
+      (c) =>
+        allowed(c) ||
+        rule.categories.includes('driver') ||
+        hasTrafficContext(text) ||
+        !TRAFFIC_ONLY_NAME.test(squash(c.name)),
     );
 
   const decorated = dedupe(inScope).map((c) => {
@@ -295,9 +346,12 @@ export function matchIncident(
   };
 
   // 원인(다쳐서/아파서)과 반대편 담보는 직접 해당으로 올리지 않는다.
+  // 자동차 사고에서는 물적/인명 갈래가 다른 담보도 참고로 내린다.
   const cause = causeOf(text);
   const isDirect = (c: MatchedCoverage) =>
-    rule.direct.test(squash(c.name)) && !contradictsCause(c.name, cause);
+    rule.direct.test(squash(c.name)) &&
+    !contradictsCause(c.name, cause) &&
+    !carSideMismatch(rule.id, c.name, text);
 
   const coverages = decorated.filter(isDirect).sort(byRankThenAmount);
   const related = decorated.filter((c) => !isDirect(c)).sort(byRankThenAmount);
@@ -325,6 +379,7 @@ export type CoverageFate =
   | 'cause-mismatch' // 사고 원인(상해/질병)과 상충해 참고로 밀림
   | 'excluded-name' // 이름이 exclude 패턴에 걸림
   | 'excluded-kind' // 계약 종류가 excludeKinds 에 걸림
+  | 'excluded-context' // 교통 전용 담보인데 사고에 차·운전 정황이 없음
   | 'excluded-status' // 해지·소멸·실효
   | 'out-of-category'; // 이 규칙이 보는 카테고리가 아님
 
@@ -358,10 +413,19 @@ export function explainMatch(text: string, candidates: CoverageCandidate[]): Mat
         return { fate: 'excluded-name', detail: `이름이 제외 패턴 ${rule.exclude} 에 걸림` };
       if (!allowed && rule.excludeKinds && c.contractKind && rule.excludeKinds.includes(c.contractKind))
         return { fate: 'excluded-kind', detail: `계약 종류 ${c.contractKind}` };
+      if (
+        !allowed &&
+        !rule.categories.includes('driver') &&
+        !hasTrafficContext(text) &&
+        TRAFFIC_ONLY_NAME.test(name)
+      )
+        return { fate: 'excluded-context', detail: '교통 전용 담보 — 사고에 차·운전 정황 없음' };
       if (!rule.direct.test(name))
         return { fate: 'related', detail: `직접 패턴 ${rule.direct} 불일치 → 참고 목록` };
       if (contradictsCause(c.name, cause))
         return { fate: 'cause-mismatch', detail: `사고 원인(${cause})과 상충 → 참고 목록` };
+      if (carSideMismatch(rule.id, c.name, text))
+        return { fate: 'related', detail: '인명 쪽 담보 — 사고에 인명 피해 정황 없음 → 참고 목록' };
       return {
         fate: 'direct',
         detail: allowed ? 'allow 패턴이 제외 규칙을 이기고 살림' : '직접 해당',

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CodefError } from '../src/lib/codef/client';
 import { toFailure } from '../src/lib/connect/errors';
 import { checkThrottle, resetThrottle } from '../src/lib/connect/throttle';
@@ -41,7 +41,14 @@ const SUCCESS = {
 };
 
 describe('연결 흐름', () => {
-  beforeEach(() => resetThrottle());
+  beforeEach(() => {
+    resetThrottle();
+    // 이 블록은 흐름 로직을 본다 — 실데이터 안전장치(checkLiveGuard)가 끼어들면 안 된다.
+    // 예전에는 CODEF_ENV 미설정이 조용히 'sandbox' 로 떨어져 우연히 통과했다.
+    // 그 기본값을 없앴으므로 이제 의존하는 값을 명시한다.
+    vi.stubEnv('CODEF_ENV', 'sandbox');
+  });
+  afterEach(() => vi.unstubAllEnvs());
 
   it('추가 인증이 필요하면 twoWayInfo 를 그대로 넘긴다', async () => {
     const client = fakeClient({ first: TWO_WAY });
@@ -91,11 +98,18 @@ describe('연결 흐름', () => {
   });
 
   it('CODEF 오류는 사용자 문장으로 바뀌어 나온다', async () => {
+    // 서버 로그는 가로채서 확인한다. 그냥 두면 이 가짜 실패가 테스트 출력에
+    // `[connect] 실패 ... env=sandbox` 로 찍혀, 앱이 정말 샌드박스를 호출한 것처럼 읽힌다.
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const client = fakeClient({
       throwOnFirst: new CodefError('CF-12100', '로그인 정보가 올바르지 않습니다'),
     });
     const out = await startConnect('m1', CREDS, { makeClient: () => client as never, save: vi.fn() });
     expect(out.status).toBe('failed');
+    // 원인 코드가 서버 로그에 남아야 한다 — 화면에는 사람이 읽을 문장만 나가므로,
+    // 로그가 없으면 "안 되는데요" 에서 더 나아갈 수 없다.
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('CF-12100'));
+    error.mockRestore();
     if (out.status !== 'failed') return;
     expect(out.failure.fixable).toBe(true);
     expect(out.failure.message).toContain('비밀번호');
@@ -226,14 +240,75 @@ describe('CODEF_ENV 해석', () => {
     expect(currentEnvironment(env({ CODEF_ENV: "'api'" }))).toBe('api');
   });
 
-  it('값이 없으면 샌드박스다', () => {
-    expect(currentEnvironment(env({}))).toBe('sandbox');
-  });
-
-  it('모르는 값은 샌드박스로 보되 조용히 넘어가지 않는다', () => {
+  // 예전에는 미설정이면 조용히 'sandbox' 였다. 샌드박스는 휴대폰 인증 없이 통과하고
+  // 가짜 계약을 돌려주므로, 설정 누락이 "테스트 데이터를 일부러 받는 것" 과 구분되지
+  // 않았다. 이제 실제 호출은 configFromEnv() 가 막고, 이 함수는 표시용 라벨만 준다.
+  it('값이 없으면 조용히 넘어가지 않는다 — 더 이상 샌드박스로 떨어지지 않는다', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(currentEnvironment(env({ CODEF_ENV: 'production' }))).toBe('sandbox');
+    expect(currentEnvironment(env({}))).not.toBe('sandbox');
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('모르는 값도 샌드박스로 보지 않고 경고한다', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(currentEnvironment(env({ CODEF_ENV: 'production' }))).not.toBe('sandbox');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('샌드박스는 명시했을 때만 샌드박스다', () => {
+    expect(currentEnvironment(env({ CODEF_ENV: 'sandbox' }))).toBe('sandbox');
+  });
+
+  // CODEF 콘솔은 "데모버전" 이라 부르지만 도메인은 development.codef.io 다.
+  // 도메인을 본 사람이 development 라고 적는 건 자연스러운 일이고, 그것 때문에
+  // 연결이 통째로 실패해서는 안 된다. 같은 환경의 다른 이름일 뿐이다.
+  it('development 는 demo 의 다른 이름이다', () => {
+    expect(currentEnvironment(env({ CODEF_ENV: 'development' }))).toBe('demo');
+    expect(currentEnvironment(env({ CODEF_ENV: ' "development" ' }))).toBe('demo');
+  });
+});
+
+describe('CODEF_ENV 미설정 — 실제 조회를 막는다', () => {
+  const env = (o: Record<string, string>) => o as unknown as NodeJS.ProcessEnv;
+  const FULL = {
+    CODEF_PUBLIC_KEY: 'pub',
+    CODEF_CLIENT_ID: 'one',
+    CODEF_CLIENT_SECRET: 'sec',
+    CODEF_SANDBOX_CLIENT_ID: 'sand-id',
+    CODEF_SANDBOX_CLIENT_SECRET: 'sand-sec',
+  };
+
+  it('키가 다 있어도 CODEF_ENV 가 없으면 클라이언트를 만들지 않는다', async () => {
+    const { configFromEnv } = await import('../src/lib/codef/client');
+    // 키가 전부 있으니 예전이라면 샌드박스로 조용히 붙어 가짜 계약을 돌려줬다.
+    expect(() => configFromEnv(env({ ...FULL }))).toThrow(/CODEF_ENV/);
+  });
+
+  it('빈 문자열·공백만 있어도 미설정으로 본다', async () => {
+    const { configFromEnv } = await import('../src/lib/codef/client');
+    expect(() => configFromEnv(env({ ...FULL, CODEF_ENV: '' }))).toThrow(/CODEF_ENV/);
+    expect(() => configFromEnv(env({ ...FULL, CODEF_ENV: '   ' }))).toThrow(/CODEF_ENV/);
+  });
+
+  it('오류 문구가 무엇을 넣어야 하는지 알려준다', async () => {
+    const { configFromEnv } = await import('../src/lib/codef/client');
+    expect(() => configFromEnv(env({ ...FULL }))).toThrow(/demo/);
+  });
+
+  it('development 로 적어도 데모 환경으로 붙는다 — 이름 하나로 실패하지 않는다', async () => {
+    const { configFromEnv } = await import('../src/lib/codef/client');
+    const c = configFromEnv(
+      env({
+        CODEF_PUBLIC_KEY: 'pub',
+        CODEF_ENV: 'development',
+        CODEF_DEMO_CLIENT_ID: 'demo-id',
+        CODEF_DEMO_CLIENT_SECRET: 'demo-sec',
+      }),
+    );
+    expect(c.environment).toBe('demo');
+    // 데모 전용 키를 골라야 한다 — 환경 이름만 바꾸고 키를 못 찾으면 의미가 없다.
+    expect(c.clientId).toBe('demo-id');
   });
 });

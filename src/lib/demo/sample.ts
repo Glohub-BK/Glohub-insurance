@@ -1,6 +1,6 @@
 import type { CoverageCandidate } from '../domain/incident-match';
 import type { CoverageRow, MatrixCell, MemberSyncRow, PolicyRow } from '../repo/dashboard';
-import { CATEGORY_LABELS, COVERAGE_CATEGORIES, type CoverageCategory } from '../domain/coverage-category';
+import { CATEGORY_LABELS, CATEGORY_SORT, COVERAGE_CATEGORIES, type CoverageCategory } from '../domain/coverage-category';
 
 /**
  * 연결 전 미리보기용 예시 가구.
@@ -13,21 +13,6 @@ import { CATEGORY_LABELS, COVERAGE_CATEGORIES, type CoverageCategory } from '../
  * 구성 의도: 첫째(미성년)에게 배상책임이 없다. 이 제품이 무엇을 잡아주는지
  * 한 화면에서 드러나야 하기 때문이다.
  */
-
-const CATEGORY_SORT: Record<CoverageCategory, number> = {
-  death: 10,
-  diagnosis: 20,
-  hospital: 30,
-  surgery: 40,
-  actual_loss: 50,
-  liability: 60,
-  fire: 70,
-  driver: 80,
-  disability: 90,
-  care: 100,
-  savings: 110,
-  other: 999,
-};
 
 const HOUSEHOLD_ID = 'demo-household';
 
@@ -135,6 +120,7 @@ const SAMPLE_POLICY_META: SamplePolicy[] = [
 export const SAMPLE_POLICIES: PolicyRow[] = SAMPLE_POLICY_META.map((p) => ({
   id: p.id,
   member_name: p.member,
+  insured_name: p.member,
   contract_kind: p.kind,
   insurer_name: p.insurer,
   product_name: p.product,

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CORE_CATEGORIES } from '@/lib/repo/dashboard';
 import { getHouseholdView } from '@/lib/repo/view-data';
 import { CATEGORY_LABELS } from '@/lib/domain/coverage-category';
+import { attributedNameOf, unmatchedInsuredNames } from '@/lib/domain/family-attribution';
 import { Avatar, Card, Icon, ICONS, Pill, SectionTitle } from '../_components/ui';
 import { ConnectCard, PreviewNotice } from '../_components/connect';
 import { DataSourceNotice } from '../_components/data-source';
@@ -9,6 +10,19 @@ import { DataErrorCard } from '../_components/data-error';
 import { Beoni } from '../_components/brand';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * 가족 화면 — 구성원은 두 종류다.
+ *
+ *   1. 인증 구성원: 본인 인증으로 자기 계약을 직접 가져온 사람 (본인·배우자·부모).
+ *      동기화 상태를 보여주고, 오래되면 다시 조회를 권한다.
+ *   2. 등록 구성원: 인증 없이 이름·관계만 등록된 사람 (주로 미성년 자녀).
+ *      가족 계약의 피보험자명 매칭으로 보장이 자동 귀속된다. 미성년자는 계약자가
+ *      될 수 없으므로 로그인 자체가 의미가 없다 — 부모 계약에 이미 들어 있다.
+ *
+ * 계약 수·담보 수는 조회자가 아니라 **피보험자 귀속** 기준이다. 계약자 본인 조회에
+ * 피보험자=배우자·자녀 계약이 딸려 오기 때문이다 (family-attribution.ts).
+ */
 
 function daysAgo(iso: string | null, now: Date): number | null {
   if (!iso) return null;
@@ -18,24 +32,29 @@ function daysAgo(iso: string | null, now: Date): number | null {
 }
 
 export default async function FamilyPage() {
-  const { mode, dataEnvironment, members, matrix, policies, coverages } = await getHouseholdView();
+  const { mode, dataEnvironment, members, matrix, policies } = await getHouseholdView();
   if (mode === 'error') return <DataErrorCard />;
   const preview = mode === 'preview';
   const now = new Date();
 
-  // 유지 중인 계약과 그 담보만 센다. 만기·해지 이력까지 더하면 숫자가 부풀어
-  // "내 계약이 이렇게 많을 리가" 하는 오해를 만든다.
+  // 유지 중인 계약만, 피보험자 귀속 이름으로 센다.
+  const memberNames = members.map((m) => m.display_name);
   const activePolicies = policies.filter((p) => p.status === '유지');
   const activeByMember = new Map<string, number>();
+  const ownerOfPolicy = new Map<string, string>();
   for (const p of activePolicies) {
-    activeByMember.set(p.member_name, (activeByMember.get(p.member_name) ?? 0) + 1);
+    const owner = attributedNameOf(p, memberNames);
+    ownerOfPolicy.set(p.id, owner);
+    activeByMember.set(owner, (activeByMember.get(owner) ?? 0) + 1);
   }
-  const activePolicyMember = new Map(activePolicies.map((p) => [p.id, p.member_name]));
+
+  // 담보 수는 귀속된 보장 맵에서 읽는다 — 계약 수와 같은 기준을 쓴다.
   const coverageCount = new Map<string, number>();
-  for (const c of coverages) {
-    const name = activePolicyMember.get(c.policy_id);
-    if (!name) continue;
-    coverageCount.set(name, (coverageCount.get(name) ?? 0) + 1);
+  for (const cell of matrix) {
+    coverageCount.set(
+      cell.display_name,
+      (coverageCount.get(cell.display_name) ?? 0) + Number(cell.coverage_count),
+    );
   }
 
   // 구성원별 핵심 담보 공백 목록
@@ -50,6 +69,9 @@ export default async function FamilyPage() {
 
   const totalActiveCoverages = [...coverageCount.values()].reduce((a, b) => a + b, 0);
 
+  // 계약의 피보험자 중 아직 가족에 없는 이름 — 추가를 권한다 (실사례: 배우자 명의 계약).
+  const missing = preview ? [] : unmatchedInsuredNames(policies, memberNames);
+
   return (
     <>
       <SectionTitle meta={`${members.length}명 · 유지 담보 ${totalActiveCoverages}개`}>
@@ -59,10 +81,31 @@ export default async function FamilyPage() {
       {preview ? <PreviewNotice>연결하면 우리 가족이 여기에 들어옵니다</PreviewNotice> : null}
       <DataSourceNotice environment={dataEnvironment} />
 
+      {missing.map((u) => (
+        <Card key={u.name} tone="warn" className="flex items-center gap-3">
+          <span className="min-w-0 flex-1">
+            <b className="text-[15px]">
+              피보험자 「{u.name}」 계약 {u.count}건이 있어요
+            </b>
+            <span className="block text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+              가족으로 추가하면 이 계약들이 그분 몫으로 정리됩니다.
+            </span>
+          </span>
+          <Link
+            href={`/family/add?name=${encodeURIComponent(u.name)}`}
+            className="btn btn-soft flex-none !min-h-[40px] !px-3"
+          >
+            추가
+          </Link>
+        </Card>
+      ))}
+
       {members.map((m) => {
+        const authed = m.last_run_id !== null || m.relation === '본인';
         const days = daysAgo(m.last_synced_at, now);
-        const stale = days === null || days > 180;
+        const stale = authed && (days === null || days > 180);
         const gaps = gapsByMember.get(m.member_id) ?? [];
+        const active = activeByMember.get(m.display_name) ?? 0;
         return (
           <Card key={m.member_id} tone={stale ? 'warn' : undefined} className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
@@ -79,19 +122,24 @@ export default async function FamilyPage() {
                 </span>
                 <br />
                 <span className="text-[14px]" style={{ color: 'var(--ink-3)' }}>
-                  유지 {activeByMember.get(m.display_name) ?? 0}건 · 담보{' '}
-                  {coverageCount.get(m.display_name) ?? 0}개
+                  유지 {active}건 · 담보 {coverageCount.get(m.display_name) ?? 0}개
                 </span>
               </span>
-              <Pill tone={m.last_run_status === 'failed' ? 'bad' : stale ? 'warn' : 'ok'}>
-                {m.last_run_status === 'failed'
-                  ? '조회 실패'
-                  : days === null
-                    ? '동기화 안 됨'
-                    : days === 0
-                      ? '오늘'
-                      : `${days}일 전`}
-              </Pill>
+              {authed ? (
+                <Pill tone={m.last_run_status === 'failed' ? 'bad' : stale ? 'warn' : 'ok'}>
+                  {m.last_run_status === 'failed'
+                    ? '조회 실패'
+                    : days === null
+                      ? '동기화 안 됨'
+                      : days === 0
+                        ? '오늘'
+                        : `${days}일 전`}
+                </Pill>
+              ) : (
+                <Pill tone={active > 0 ? 'ok' : 'warn'}>
+                  {active > 0 ? '가족 계약으로 보장' : '연결된 계약 없음'}
+                </Pill>
+              )}
             </div>
 
             <div
@@ -111,16 +159,26 @@ export default async function FamilyPage() {
               )}
             </div>
 
+            {!authed ? (
+              <p className="text-[14px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                {m.is_minor
+                  ? '인증 없이 등록된 구성원입니다. 가족 계약에서 피보험자가 이 이름인 계약이 자동으로 연결됩니다.'
+                  : active > 0
+                    ? '가족 계약의 피보험자로 연결되어 있습니다. 본인이 직접 가입한 보험까지 보려면 본인 인증이 필요합니다.'
+                    : '아직 연결된 계약이 없습니다. 계약의 피보험자명과 이름이 같아야 자동으로 연결됩니다.'}
+              </p>
+            ) : null}
+
             {stale ? (
               <>
                 <div className="flex items-start gap-2.5">
                   <span className="flex-none">
                     <Beoni pose="clock" height={40} />
                   </span>
-                <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                  마지막 조회가 반년을 넘었습니다. 그 사이 새로 가입한 보험이 있다면 반영되지
-                  않습니다.
-                </p>
+                  <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+                    마지막 조회가 반년을 넘었습니다. 그 사이 새로 가입한 보험이 있다면 반영되지
+                    않습니다.
+                  </p>
                 </div>
                 {/* 연결 화면이 생겼으니 여기서 바로 보낸다. 안내만 하고 길이 없으면 막다른 길이다. */}
                 <Link href="/connect" className="btn btn-soft">
@@ -142,7 +200,7 @@ export default async function FamilyPage() {
           <b className="text-[16px]">가족 추가</b>
           <br />
           <span className="text-[14px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
-            부모님이 들어둔 내 보험, 조부모님의 손자녀보험도 함께 봅니다
+            미성년 자녀는 이름만 등록하면 부모 계약에서 자동으로 연결됩니다
           </span>
         </span>
         <span className="flex-none" style={{ color: 'var(--ink-3)' }}>
@@ -151,11 +209,9 @@ export default async function FamilyPage() {
       </Link>
 
       <p className="note">
-        가족 계약은 대신 조회할 수 없습니다. 각자 인증하면 결과만 우리집 화면에 합쳐집니다.{' '}
-        <b className="font-semibold" style={{ color: 'var(--ink-2)' }}>
-          조회는 가끔, 데이터는 항상
-        </b>{' '}
-        — 새 보험에 가입했을 때만 다시 동기화하세요.
+        성인 가족의 <b className="font-semibold" style={{ color: 'var(--ink-2)' }}>본인 명의 계약</b>은
+        대신 조회할 수 없습니다 — 각자 인증하면 결과만 우리집 화면에 합쳐집니다. 미성년 자녀는
+        계약자가 될 수 없으므로 인증이 필요 없습니다.
       </p>
     </>
   );

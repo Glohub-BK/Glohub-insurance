@@ -1,4 +1,4 @@
-import { CodefClient, configFromEnv, type ContractInfoResult } from '../codef/client';
+import { CodefClient, configFromEnv, readEnvName, type ContractInfoResult } from '../codef/client';
 import { normalizeContractInfo } from '../codef/normalize';
 import type { CodefEnvironment, CodefTwoWayData } from '../codef/types';
 import { saveSyncResult, type SaveSyncOutput } from '../repo/sync';
@@ -55,13 +55,18 @@ export type ConnectDeps = {
 /** 저장 기록에 어느 환경에서 받은 데이터인지 남긴다. 샌드박스 데이터가 실데이터로 둔갑하면 안 된다. */
 export function currentEnvironment(env: NodeJS.ProcessEnv = process.env): CodefEnvironment {
   // 따옴표·공백이 붙은 채로 들어오는 일이 잦다. 값을 다듬은 뒤에 판단한다.
-  const raw = env.CODEF_ENV?.trim().replace(/^["']|["']$/g, '');
+  // 읽기 규칙은 configFromEnv 와 같아야 한다 — 화면 라벨과 실제 호출 대상이
+  // 갈리면 "설정은 데모인데 결과는 샌드박스" 를 눈으로 잡을 수 없다.
+  const raw = readEnvName(env);
   if (raw === 'demo' || raw === 'api' || raw === 'sandbox') return raw;
-  if (raw) {
-    // 조용히 샌드박스로 떨어뜨리면 가짜 데이터를 실데이터로 착각하게 된다.
-    console.warn(`[connect] CODEF_ENV 값을 알 수 없습니다: ${JSON.stringify(raw)} → 샌드박스로 봅니다`);
-  }
-  return 'sandbox';
+  // 여기는 **표시용 라벨**이다. 실제 호출은 configFromEnv() 가 막으므로(미설정이면 예외)
+  // 이 폴백으로는 데이터가 한 건도 들어오지 않는다. 그래서 던지지 않는다 —
+  // 실패 로그를 남기는 경로가 이 함수를 부르기 때문에, 여기서 던지면 처리된 실패가
+  // 크래시로 바뀐다.
+  console.warn(
+    `[connect] CODEF_ENV 를 읽을 수 없습니다: ${JSON.stringify(raw ?? null)} → 표시는 demo 로 두지만 실제 조회는 거부됩니다`,
+  );
+  return 'demo';
 }
 
 function clientFrom(deps: ConnectDeps): CodefClient {

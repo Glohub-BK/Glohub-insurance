@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   explainMatch,
   groupByPolicy,
+  hasPersonInjuryContext,
   matchIncident,
   type CoverageCandidate,
   type MatchedCoverage,
@@ -248,7 +249,7 @@ export function ClaimSearch({
       {result?.kind === 'matched' ? (
         <MatchedResult
           result={result}
-          citation={citations[result.rule.id] ?? null}
+          citation={citationFor(citations, result.rule.id, ran)}
           queryText={ran}
           candidates={candidates}
         />
@@ -283,6 +284,25 @@ export function ClaimSearch({
       ) : null}
     </>
   );
+}
+
+/**
+ * 사고 유형에 맞는 근거 조항을 고른다.
+ *
+ * 자동차 사고는 물적/인명 갈래에 따라 근거 조항이 다르다 — 「옆차를 긁었어요」의
+ * 근거는 대물배상 조항이지, 자기신체사고 조항이 아니다. 갈래 조항이 없으면
+ * 공용 자동차 키로, 그것도 없으면 null(규칙 예시 문구)로 떨어진다.
+ */
+function citationFor(
+  citations: Partial<Record<string, ClauseCitation>>,
+  ruleId: string,
+  text: string,
+): ClauseCitation | null {
+  if (ruleId === 'car') {
+    const key = hasPersonInjuryContext(text) ? 'car-person' : 'car-property';
+    return citations[key] ?? citations.car ?? null;
+  }
+  return citations[ruleId] ?? null;
 }
 
 function UnknownResult() {
@@ -545,6 +565,7 @@ const FATE_LABEL: Record<string, string> = {
   'cause-mismatch': '참고 (원인 상충)',
   'excluded-name': '제외 — 이름 규칙',
   'excluded-kind': '제외 — 계약 종류',
+  'excluded-context': '제외 — 교통 전용 담보 (차·운전 정황 없음)',
   'excluded-status': '제외 — 해지·소멸',
   'out-of-category': '이 사고 유형의 대상 아님',
 };

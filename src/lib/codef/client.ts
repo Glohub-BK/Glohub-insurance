@@ -58,8 +58,39 @@ const CLIENT_PREFIX: Record<CodefEnvironment, string> = {
   api: 'CODEF_API',
 };
 
+/**
+ * 사람이 적은 CODEF_ENV 를 코드의 환경 값으로 읽는다.
+ *
+ * 두 가지를 흡수한다.
+ *   1. 따옴표·공백 — .env 편집에서 가장 흔한 실수다.
+ *   2. `development` → `demo` — **같은 환경의 다른 이름이다.**
+ *      CODEF 는 이 환경을 콘솔에서 "데모버전" 이라 부르지만 도메인은
+ *      development.codef.io 다. 그래서 도메인을 본 사람은 development 라고 적고,
+ *      "CODEF_ENV 값이 올바르지 않습니다" 를 만난다. 이름 하나 때문에 연결이
+ *      통째로 실패할 이유가 없다.
+ *
+ * 값이 없으면 빈 문자열이 아니라 undefined 를 돌려준다 — 미설정과 오타는 다른 문제다.
+ */
+export function readEnvName(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const raw = env.CODEF_ENV?.trim().replace(/^["']|["']$/g, '');
+  if (!raw) return undefined;
+  return raw === 'development' ? 'demo' : raw;
+}
+
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): CodefConfig {
-  const environment = (env.CODEF_ENV ?? 'sandbox') as CodefEnvironment;
+  // 기본값을 두지 않는다.
+  //
+  // 예전에는 미설정이면 조용히 'sandbox' 로 떨어졌다. 샌드박스는 휴대폰 인증 없이
+  // 통과하고 그럴듯한 가짜 계약을 돌려주므로, 설정을 깜빡한 것과 "테스트 데이터를
+  // 일부러 받는 것" 이 화면에서 구분되지 않았다. 환경은 반드시 명시해야 한다 —
+  // 실제 호출로 가는 길목은 여기 하나뿐이라, 여기서 막으면 사고가 원천 차단된다.
+  const raw = readEnvName(env);
+  if (!raw) {
+    throw new Error(
+      'CODEF_ENV 가 설정되지 않았습니다. demo(=development, 실데이터·하루 100건) / api(정식) / sandbox(가짜 데이터) 중 하나를 명시하세요.',
+    );
+  }
+  const environment = raw as CodefEnvironment;
   if (!(environment in BASE_URL)) {
     throw new Error(`CODEF_ENV 값이 올바르지 않습니다: ${environment}`);
   }

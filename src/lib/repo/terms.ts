@@ -1,5 +1,5 @@
 import { query } from '../db';
-import { pickClause, ruleIds, type RuleId } from '../terms/match';
+import { citationKeys, pickClause, type CitationKey } from '../terms/match';
 import { citationOf } from '../terms/parse';
 
 /**
@@ -10,7 +10,7 @@ import { citationOf } from '../terms/parse';
  */
 
 export type ClauseCitation = {
-  ruleId: RuleId;
+  ruleId: CitationKey;
   articleLabel: string;
   clauseTitle: string | null;
   body: string;
@@ -121,12 +121,12 @@ export async function getPolicyTermsStatus(householdId: string): Promise<PolicyT
 
 export async function getClauseCitations(
   householdId: string,
-): Promise<Partial<Record<RuleId, ClauseCitation>>> {
+): Promise<Partial<Record<CitationKey, ClauseCitation>>> {
   const rows = await listHouseholdClauses(householdId);
   if (rows.length === 0) return {};
 
-  const out: Partial<Record<RuleId, ClauseCitation>> = {};
-  for (const ruleId of ruleIds()) {
+  const out: Partial<Record<CitationKey, ClauseCitation>> = {};
+  for (const ruleId of citationKeys()) {
     const best = pickClause(
       ruleId,
       rows.map((r) => ({ ...r, title: r.title })),

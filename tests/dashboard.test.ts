@@ -41,6 +41,7 @@ function policy(over: Partial<PolicyRow> = {}): PolicyRow {
   return {
     id: 'p1',
     member_name: '본인',
+    insured_name: '본인',
     contract_kind: 'flat_rate',
     insurer_name: 'A생명',
     product_name: 'A보험',

@@ -40,6 +40,22 @@ export const CATEGORY_LABELS: Record<CoverageCategory, string> = {
   other: '기타',
 };
 
+/** 보장 맵 정렬 순서. DB 의 coverage_category.sort_order 시드와 같은 값이어야 한다. */
+export const CATEGORY_SORT: Record<CoverageCategory, number> = {
+  death: 10,
+  diagnosis: 20,
+  hospital: 30,
+  surgery: 40,
+  actual_loss: 50,
+  liability: 60,
+  fire: 70,
+  driver: 80,
+  disability: 90,
+  care: 100,
+  savings: 110,
+  other: 999,
+};
+
 type Rule = {
   category: CoverageCategory;
   /** 하나라도 포함되면 매칭 */

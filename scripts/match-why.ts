@@ -19,6 +19,7 @@ const FATE_LABEL: Record<CoverageFate, string> = {
   'cause-mismatch': '📎 참고 (원인 상충)',
   'excluded-name': '🚫 제외 (이름)',
   'excluded-kind': '🚫 제외 (계약 종류)',
+  'excluded-context': '🚫 제외 (교통 전용 담보 — 차·운전 정황 없음)',
   'excluded-status': '🚫 제외 (상태)',
   'out-of-category': '· 대상 아님 (카테고리)',
 };
@@ -59,8 +60,9 @@ async function main() {
     'cause-mismatch': 2,
     'excluded-name': 3,
     'excluded-kind': 4,
-    'excluded-status': 5,
-    'out-of-category': 6,
+    'excluded-context': 5,
+    'excluded-status': 6,
+    'out-of-category': 7,
   };
   const inPlay = ex.rows
     .filter((r) => r.fate !== 'out-of-category')

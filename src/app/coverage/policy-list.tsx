@@ -22,7 +22,8 @@ export type PolicyCardData = {
   status: string;
   start: string | null;
   end: string | null;
-  termsCount: number;
+  /** 이 계약의 상품에 약관 조항이 확보돼 있는가 (공유 조항 포함 — 약관 보관함과 같은 기준). */
+  hasTerms: boolean;
   cats: string[];
 };
 
@@ -74,8 +75,8 @@ function PolicyCard({ p }: { p: PolicyCardData }) {
         <span className="tnum">
           {p.start ?? '?'} ~ {p.end ?? '종신'}
         </span>
-        {p.termsCount > 0 ? (
-          <Pill tone="ok">약관 {p.termsCount}건</Pill>
+        {p.hasTerms ? (
+          <Pill tone="ok">약관 확보</Pill>
         ) : (
           <Pill tone="warn">약관 미수집</Pill>
         )}

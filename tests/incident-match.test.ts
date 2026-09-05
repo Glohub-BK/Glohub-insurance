@@ -419,3 +419,101 @@ describe('담보명 표기 변형 — 「가족생활배상책임담보」 실�
     expect(r.noCoverage).toBe(true);
   });
 });
+
+describe('교통 전용 담보 — 차·운전 정황이 없으면 뺀다', () => {
+  // 실사례: 「뛰어가다가 보도블럭에 넘어지면서 다리가 부러졌어」에
+  // 운전자상해보험(flat_rate)의 교통사고처리지원금 2억이 직접 해당으로 나왔다.
+  // 계약 종류(excludeKinds: car)로는 못 거른다 — 운전자보험은 장기보험이다.
+  // 담보 이름이 교통 전용인데 사고 문장에 차·운전 정황이 없으면 제외한다.
+  const FALL = '뛰어가다가 보도블럭에 넘어지면서 다리가 부러졌어';
+
+  const trafficOnly = [
+    cov({ policyId: 'drv', category: 'actual_loss', name: '교통사고처리지원금(중상해포함)' }),
+    cov({ policyId: 'drv', category: 'actual_loss', name: '교통사고+처리지원금(6주미만+진단)' }),
+    cov({ policyId: 'drv', category: 'diagnosis', name: '자동차부상치료비' }),
+  ];
+
+  it('보도블럭 낙상에 교통사고처리지원금이 나오지 않는다', () => {
+    const r = matchIncident(FALL, [
+      ...trafficOnly,
+      cov({ policyId: 'db', category: 'actual_loss', name: '상해+입원의료비' }),
+      cov({ policyId: 'mz', category: 'diagnosis', name: '5대골절진단비' }),
+    ]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.rule.id).toBe('injury-fracture');
+    const shown = [...r.coverages, ...r.related].map((c) => c.name);
+    expect(shown).toContain('상해+입원의료비');
+    expect(shown).toContain('5대골절진단비');
+    for (const name of shown) expect(name).not.toMatch(/교통사고|자동차/);
+  });
+
+  it('차에 치인 사고에는 교통 담보가 살아남는다', () => {
+    const r = matchIncident('길을 건너다 차에 치여서 다리가 부러졌어', trafficOnly);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.coverages.map((c) => c.name)).toContain('교통사고처리지원금(중상해포함)');
+  });
+
+  it('AI 해석기가 규칙을 강제해도 같은 판정이다 (forceRuleId 경로)', () => {
+    const r = matchIncident(FALL, trafficOnly, { forceRuleId: 'injury-fracture' });
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.coverages).toHaveLength(0);
+    expect(r.related).toHaveLength(0);
+    expect(r.noCoverage).toBe(true);
+  });
+
+  it('explainMatch 가 excluded-context 로 이유를 밝힌다', () => {
+    const ex = explainMatch(FALL, trafficOnly);
+    expect(ex.ruleId).toBe('injury-fracture');
+    for (const row of ex.rows) expect(row.fate).toBe('excluded-context');
+  });
+
+  it('자동차 사고 규칙(car) 자체는 이 가드의 대상이 아니다', () => {
+    const r = matchIncident('주차하다 옆차를 긁었어요', [
+      cov({ policyId: 'car', category: 'driver', name: '대물배상', contractKind: 'car' }),
+    ]);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.noCoverage).toBe(false);
+  });
+});
+
+describe('자동차 사고 — 물적/인명 갈래', () => {
+  // 실사례: 「주차하다 옆차를 긁었어요」에 대인배상·형사합의·교통사고처리지원금까지
+  // 전부 직접 해당으로 올라왔다. 물적 사고에는 물적 담보가 앞이어야 한다.
+  const SCRATCH = '주차하다 옆차를 긁었어요';
+
+  const carCovs = [
+    cov({ policyId: 'car', category: 'driver', name: '대물배상', contractKind: 'car' }),
+    cov({ policyId: 'car', category: 'driver', name: '자기차량손해', contractKind: 'car' }),
+    cov({ policyId: 'car', category: 'driver', name: '대인배상Ⅱ', contractKind: 'car' }),
+    cov({ policyId: 'car', category: 'driver', name: '자기신체사고', contractKind: 'car' }),
+    cov({ policyId: 'drv', category: 'driver', name: '교통사고처리지원금(중상해포함)' }),
+    cov({ policyId: 'drv', category: 'driver', name: '변호사선임비용', contractKind: 'flat_rate' }),
+  ];
+
+  it('옆차 긁음: 물적 담보만 직접, 인명 쪽은 참고로 내려간다', () => {
+    const r = matchIncident(SCRATCH, carCovs);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.rule.id).toBe('car');
+    expect(r.coverages.map((c) => c.name)).toEqual(
+      expect.arrayContaining(['대물배상', '자기차량손해']),
+    );
+    for (const c of r.coverages) expect(c.name).not.toMatch(/대인|자기신체|처리지원금|변호사/);
+    expect(r.related.map((c) => c.name)).toEqual(
+      expect.arrayContaining(['대인배상Ⅱ', '자기신체사고']),
+    );
+  });
+
+  it('사람을 친 사고: 인명 쪽 담보가 직접 해당으로 산다', () => {
+    const r = matchIncident('운전하다 보행자를 치어서 다치게 했어요', carCovs);
+    if (r.kind !== 'matched') throw new Error('matched 여야 한다');
+    expect(r.coverages.map((c) => c.name)).toContain('대인배상Ⅱ');
+  });
+
+  it('explainMatch 도 같은 이유를 밝힌다', () => {
+    const ex = explainMatch(SCRATCH, [
+      cov({ policyId: 'car', category: 'driver', name: '대인배상Ⅱ', contractKind: 'car' }),
+    ]);
+    expect(ex.rows[0].fate).toBe('related');
+    expect(ex.rows[0].detail).toContain('인명');
+  });
+});

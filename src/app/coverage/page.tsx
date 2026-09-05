@@ -1,5 +1,6 @@
 import { CORE_CATEGORIES } from '@/lib/repo/dashboard';
 import { getHouseholdView } from '@/lib/repo/view-data';
+import { getPolicyTermsStatus } from '@/lib/repo/terms';
 import { CATEGORY_LABELS } from '@/lib/domain/coverage-category';
 import { Card, Disclaimer, SectionTitle, shortWon } from '../_components/ui';
 import { isSaneTotal } from '@/lib/domain/coverage-basis';
@@ -28,9 +29,19 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default async function CoveragePage() {
-  const { mode, dataEnvironment, members, matrix, policies, coverages } = await getHouseholdView();
+  const { mode, dataEnvironment, members, matrix, policies, coverages, household } =
+    await getHouseholdView();
   if (mode === 'error') return <DataErrorCard />;
   const preview = mode === 'preview';
+
+  // 약관 배지는 약관 보관함과 같은 기준을 쓴다: 이 계약의 상품에 조항이 확보돼 있는가.
+  // policy_summary.terms_doc_count 는 문서가 그 계약 행에 직접 연결된 경우만 세서,
+  // 같은 상품의 다른 계약에 올린 약관·공유 조항이 있어도 "미수집"으로 나왔다(실사례).
+  const clausesByPolicy = new Map<string, number>();
+  if (mode === 'live') {
+    const termsStatus = await getPolicyTermsStatus(household.id).catch(() => []);
+    for (const s of termsStatus) clausesByPolicy.set(s.policy_id, Number(s.clause_count));
+  }
 
   const categories = Array.from(
     new Map(
@@ -69,13 +80,15 @@ export default async function CoveragePage() {
     id: p.id,
     productName: p.product_name,
     insurerName: p.insurer_name,
-    memberName: p.member_name,
+    // 카드의 이름표는 피보험자 — 이 담보로 보장받는 사람이다.
+    memberName: p.insured_name?.trim() || p.member_name,
     premium: p.premium === null ? null : Number(p.premium),
     paymentCycle: p.payment_cycle,
     status: p.status,
     start: p.start_date,
     end: p.end_date,
-    termsCount: Number(p.terms_doc_count),
+    // 조항이 확보돼 있으면(공유 포함) 약관이 있는 것이다. preview 는 문서 수로 폴백.
+    hasTerms: (clausesByPolicy.get(p.id) ?? 0) > 0 || Number(p.terms_doc_count) > 0,
     cats: Array.from(new Set((covByPolicy.get(p.id) ?? []).map((c) => CATEGORY_LABELS[c.category]))),
   });
 

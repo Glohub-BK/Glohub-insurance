@@ -1,8 +1,8 @@
 import { query } from '../db';
 import type { CoverageCandidate } from '../domain/incident-match';
+import { buildAttributedMatrix } from '../domain/family-attribution';
 import {
   getCoverageCandidates,
-  getCoverageMatrix,
   getCoverages,
   getMembers,
   getPolicies,
@@ -86,17 +86,20 @@ export async function getHouseholdView(): Promise<HouseholdView> {
 
   const loaded = await Promise.all([
     getMembers(household.id),
-    getCoverageMatrix(household.id),
     getPolicies(household.id),
     getCoverages(household.id),
   ]).catch(logDbError);
   if (loaded === DB_ERROR) return ERROR_VIEW;
 
-  const [members, matrix, policies, coverages] = loaded;
+  const [members, policies, coverages] = loaded;
 
   // 가구는 있는데 아직 아무도 인증하지 않은 상태도 미리보기로 본다.
   // 빈 화면을 보여주면 이 앱이 뭘 하는지 알 방법이 없다.
   if (policies.length === 0) return SAMPLE_VIEW;
+
+  // 보장 맵은 SQL 뷰(조회자 귀속)가 아니라 피보험자명 귀속으로 짠다.
+  // 계약자 본인 조회에 피보험자=배우자·자녀 계약이 딸려 오기 때문이다.
+  const matrix = buildAttributedMatrix(members, policies, coverages);
 
   const dataEnvironment = await latestEnvironment(household.id).catch(() => null);
   return { mode: 'live', dataEnvironment, household, members, matrix, policies, coverages };
@@ -135,7 +138,9 @@ export async function getCandidateView(): Promise<CandidateView> {
     mode: 'live',
     candidates: rows.map((r) => ({
       policyId: r.policyId,
-      memberName: r.memberName,
+      // 청구 화면의 이름표는 피보험자가 맞다 — 계약자(조회자)가 아니라
+      // 그 담보로 보장받는 사람. 피보험자명이 없으면 조회자명으로 돌아간다.
+      memberName: r.insuredName?.trim() || r.memberName,
       insurerName: r.insurerName,
       productName: r.productName,
       // 이 줄이 빠져 있었다. 계약 종류가 없으면 excludeKinds 가 라이브 데이터에서
