@@ -579,9 +579,14 @@ const FATE_LABEL: Record<string, string> = {
  */
 function WhyNoCoverage({ text, candidates }: { text: string; candidates: CoverageCandidate[] }) {
   const [open, setOpen] = useState(false);
+  const [showRest, setShowRest] = useState(false);
   const ex = explainMatch(text, candidates);
   if (!ex.ruleId) return null;
+  // 이 사고 유형이 보는 분류의 담보만 앞에 세운다. 나머지는 접어 두되 **숨기지는 않는다** —
+  // 「일배책이 없다」는 판정을 확인하려면, 다른 분류로 잘못 들어간 담보가 없다는 것까지
+  // 눈으로 볼 수 있어야 한다. 접힌 목록이 그 사각지대를 메운다.
   const rows = ex.rows.filter((r) => r.fate !== 'out-of-category');
+  const rest = ex.rows.filter((r) => r.fate === 'out-of-category');
 
   return (
     <Card flat>
@@ -615,6 +620,31 @@ function WhyNoCoverage({ text, candidates }: { text: string; candidates: Coverag
             ))
           )}
         </ul>
+      ) : null}
+
+      {open && rest.length > 0 ? (
+        <div className="mt-2.5 border-t pt-2.5" style={{ borderColor: 'var(--line)' }}>
+          <button
+            type="button"
+            className="text-left text-[13px] underline"
+            style={{ color: 'var(--ink-3)' }}
+            onClick={() => setShowRest((v) => !v)}
+          >
+            {showRest
+              ? '다른 분류 담보 접기'
+              : `이 사고와 다른 분류로 잡힌 담보 ${rest.length}건 보기`}
+          </button>
+          {showRest ? (
+            <ul className="mt-2 flex flex-col gap-1">
+              {rest.map((r, i) => (
+                <li key={i} className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                  {r.candidate.name}
+                  <span> — {r.detail}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </Card>
   );
